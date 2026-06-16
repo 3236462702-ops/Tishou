@@ -35,6 +35,19 @@ from modules.utils import (
     PROJECT_DIR,
 )
 
+# ══════════════════════════════════════════════════════════
+# 安卓专属库：android-apps（用于读取已安装应用列表）
+# 打包时由 buildozer 从源码编译加入 APK
+# Windows 环境不可用，用 try-except 保护
+# ══════════════════════════════════════════════════════════
+try:
+    import android_apps  # noqa
+    _HAS_ANDROID_APPS = True
+except ImportError:
+    _HAS_ANDROID_APPS = False
+except Exception:
+    _HAS_ANDROID_APPS = False
+
 
 # ============================================================
 # 常量
@@ -263,7 +276,50 @@ class AndroidAppReader:
 
     def _read_from_device(self) -> List[dict]:
         """
-        通过 Android pm 命令读取设备应用
+        读取设备已安装应用（双模式）
+        优先使用 android_apps 库，不可用时回退到 pm list packages 命令
+
+        :return: 应用列表
+        """
+        apps = []
+
+        # ---- 优先：android_apps 库（打包时由 p4a 编译加入 APK） ----
+        if _HAS_ANDROID_APPS:
+            try:
+                return self._read_via_android_apps()
+            except Exception as e:
+                self._logger.warning(f"android_apps 读取失败，切换 pm 命令: {e}")
+
+        # ---- 备用：pm list packages 命令 ----
+        return self._read_via_pm_command()
+
+    def _read_via_android_apps(self) -> List[dict]:
+        """
+        通过 android_apps 库读取设备已安装应用
+
+        :return: 应用列表
+        """
+        apps = []
+        try:
+            # android_apps.get_installed_apps() 返回列表
+            # 每项包含 package, name, system 等字段
+            raw_apps = android_apps.get_installed_apps()
+            for app in raw_apps:
+                apps.append({
+                    "package": app.get("package", ""),
+                    "name": app.get("name", app.get("package", "")),
+                    "system": app.get("system", False),
+                    "apk_path": app.get("apk_path", ""),
+                })
+            apps.sort(key=lambda x: x["name"].lower())
+            self._logger.debug(f"android_apps 读取: {len(apps)} 个应用")
+        except Exception as e:
+            self._logger.error(f"android_apps 读取异常: {e}")
+        return apps
+
+    def _read_via_pm_command(self) -> List[dict]:
+        """
+        通过 Android pm 命令读取设备应用（备用方案）
 
         :return: 应用列表
         """
@@ -314,16 +370,7 @@ class AndroidAppReader:
                 pass  # 获取系统应用标记失败，改用启发式判断
 
             # ---- 第3步：获取应用名称（label） ----
-            # 使用 aapt dump badging 或 cmd package resolve-activity
             app_labels = {}
-            try:
-                # 方法1：使用 cmd package list packages 获取更多信息
-                # （Android 11+ 支持 --show-versioncode）
-                pass
-            except Exception:
-                pass
-
-            # 尝试使用 aapt 获取应用名称（仅读取前几行加速）
             for pkg, apk_path in package_paths.items():
                 app_name = self._get_app_label_via_aapt(apk_path)
                 if not app_name:

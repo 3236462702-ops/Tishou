@@ -49,19 +49,19 @@ TiShou — 主入口（完整冷启动流程）
    的 longintrepr.h 找不到。解决方案：彻底移除 pygame（已替换为 pyjnius →
    android.media.AudioTrack），requirements 中不写 pygame。
 
-四、三个安卓专属库的处理：
+四、三个安卓专属库的处理（必须保留，不可删除）：
    accessible-android  —— import 名：android_accessibility（capture.py）
-   android-permissions  —— import 名：android.permissions（permission.py）
-   android-apps        —— import 名：android_apps
+   pyobjus              —— 悬浮窗桥接（float_win.py）
+   android-apps        —— import 名：android_apps（app_list.py）
 
    处理方式：
-   - buildozer.spec 的 requirements 中列出这三项，buildozer 会自动加入 APK
+   - buildozer.spec 的 requirements 中必须列出这三项，buildozer 会自动加入 APK
    - 代码中通过 try-except ImportError 包裹导入语句
    - Windows 环境/打包前测试运行时，这三个库不可用，代码静默降级
    - 安卓 APK 运行时，buildozer 编译的 .so 中自带这些模块
 
 五、关键 buildozer.spec 参数：
-   requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
+   requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule,accessible-android,pyobjus,android-apps
 
    ⚠️ 注意：
    - 不要写 pygame（它依赖 longintrepr.h，Python 3.12+ 已移除）
@@ -108,13 +108,29 @@ DEFAULT_CONFIG = {
     "ocr_timeout": 8.0,
     "ocr_image_scale": 1.3,
     "order_judge_delay": 5.0,
-    "filter_thresholds": {
-        "min_price": 0.0,
-        "max_price": 999999.0,
-        "min_distance": 0.0,
-        "max_distance": 999999.0,
-        "keywords_include": [],
-        "keywords_exclude": [],
+    "filter": {
+        "refresh_mode": "fixed",              # fixed | random
+        "refresh_interval": 3.0,             # 固定刷新间隔（秒）
+        "refresh_min": 2.0,                  # 随机最小间隔（秒）
+        "refresh_max": 8.0,                  # 随机最大间隔（秒）
+        "click_mode": "fixed",               # fixed | random
+        "click_interval": 1.0,               # 固定点击间隔（秒）
+        "click_min": 0.5,                    # 随机最小点击间隔（秒）
+        "click_max": 3.0,                    # 随机最大点击间隔（秒）
+        "min_price": 0.0,                    # 最低金额
+        "max_price": 999999.0,               # 最高金额
+        "max_pickup_distance": 10.0,         # 接驾距离上限（km）
+        "min_mileage": 0.0,                  # 订单最低里程（km）
+        "max_mileage": 999999.0,             # 订单最高里程（km）
+        "min_unit_price": 1.0,               # 最低单价（元/km）
+        "max_unit_price": 8.0,               # 最高单价（元/km）
+        "area_mode": "none",                 # none | whitelist | blacklist
+        "area_provinces": [],                # 省份列表（空=不限）
+        "area_cities": [],                   # 城市列表
+        "area_auto_locate": True,            # 是否自动定位
+        "order_types": ["fast", "express"],  # 选中的订单类型key列表
+        "keywords_include": [],              # 黑名单关键词
+        "keywords_exclude": [],              # 白名单关键词
     },
     "float_window": {
         "width": 240,

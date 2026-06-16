@@ -484,7 +484,30 @@ format = columns
             return True
         except Exception as e:
             self._logger.warn(f"Block foreign sources warning: {e}")
-            return False
+            return True
+
+    def check_android_libs(self):
+        """
+        检查三个安卓专属库（仅供信息提示，不在 Windows 安装）
+        accessible-android, pyobjus, android-apps 由 buildozer/p4a 编译进 APK
+        """
+        self._logger.step("检查安卓专属库状态（仅提示信息）...")
+        android_libs = [
+            ("accessible-android", "android_accessibility"),
+            ("pyobjus", "pyobjus"),
+            ("android-apps", "android_apps"),
+        ]
+        for lib_name, import_name in android_libs:
+            try:
+                __import__(import_name)
+                self._logger.info(f"  ✓ {lib_name} 已安装")
+            except ImportError:
+                self._logger.warn(
+                    f"  {lib_name} 未安装（正常 — "
+                    f"此库由 buildozer/p4a 编译进 APK，不在 Windows pip 安装）"
+                )
+            except Exception as e:
+                self._logger.warn(f"  {lib_name} 检查异常: {e}")
 
 
 # ============================================================
@@ -569,7 +592,12 @@ def main():
     missing = mirror_mgr.verify_installation()
 
     # ============================================================
-    # 步骤 7：输出摘要
+    # 步骤 7：检查安卓专属库
+    # ============================================================
+    mirror_mgr.check_android_libs()
+
+    # ============================================================
+    # 步骤 8：输出摘要
     # ============================================================
     logger.header("安装摘要")
     logger.info(f"镜像配置: {MIRRORS[selected]['name']} {'(已切换)' if selected != prefer_mirror else ''}")

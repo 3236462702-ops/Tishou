@@ -52,7 +52,14 @@ version = 1.0.0
 # version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
-requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
+# ═══════════════════════════════════════════════════════════════
+# 【强制要求】三个安卓专属库必须保留，不可删除！
+#   accessible-android — 无障碍服务抓取（主力引擎）
+#   pyobjus            — 悬浮窗桥接（Android Java Bridge）
+#   android-apps       — 应用列表读取
+# 这三个库由 python-for-android 从源码编译加入 APK，不是 pip 包
+# ═══════════════════════════════════════════════════════════════
+requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule,accessible-android,pyobjus,android-apps
 
 # (str) Custom source folders for requirements
 # requirements.source.pyyaml = ext_libs/pyyaml

@@ -54,16 +54,14 @@ DEFAULT_MAX_ORDER_DIST = 999999.0
 DEFAULT_MIN_UNIT_PRICE = 1.0
 DEFAULT_MAX_UNIT_PRICE = 8.0
 
-# ---- 订单类型 ----
+# ---- 订单类型（必须与约束定义一致） ----
 ORDER_TYPES = [
     {"key": "fast", "name": "快车"},
-    {"key": "special", "name": "专车"},
-    {"key": "luxury", "name": "豪华车"},
-    {"key": "taxi", "name": "出租车"},
-    {"key": "hitch", "name": "顺风车"},
-    {"key": "freight", "name": "货运"},
-    {"key": "designated", "name": "代驾"},
-    {"key": "chartered", "name": "包车"},
+    {"key": "express", "name": "特快"},
+    {"key": "special_offer", "name": "特惠"},
+    {"key": "long_distance", "name": "长途特惠"},
+    {"key": "small_item", "name": "小件"},
+    {"key": "carpool", "name": "拼车"},
 ]
 
 # ---- 刷新模式 ----

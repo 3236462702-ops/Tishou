@@ -713,6 +713,25 @@ class PermissionManager:
                         pass
                     return PermissionState.DENIED
 
+            # ---- 特殊权限：屏幕录制（MEDIA_PROJECTION） ----
+            # MEDIA_PROJECTION 需要通过 MediaProjectionManager.createScreenCaptureIntent()
+            # 以 startActivityForResult 方式获取授权，无法用 checkSelfPermission 判断
+            # 这里始终返回 UNKNOWN 并引导用户手动授权
+            if perm_key == "screen_record":
+                self._logger.debug("MEDIA_PROJECTION 需通过系统录屏弹窗授权，跳过 checkSelfPermission")
+                # 标记为 unknown，后续申请流程会弹出系统录屏确认弹窗
+                try:
+                    from jnius import autoclass
+                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
+                    activity = PythonActivity.mActivity
+                    if activity:
+                        # 如果 Android 13+ 的 MEDIA_PROJECTION 可用，尝试直接返回 DENIED
+                        # 让流程进入申请阶段
+                        return PermissionState.DENIED
+                except Exception:
+                    pass
+                return PermissionState.DENIED
+
             # ---- 普通权限 ----
             try:
                 from android.permissions import check_permission

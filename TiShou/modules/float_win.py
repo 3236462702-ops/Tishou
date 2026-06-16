@@ -42,6 +42,19 @@ from modules.utils import (
     PROJECT_DIR, ASSETS_DIR,
 )
 
+# ══════════════════════════════════════════════════════════
+# 安卓专属库：pyobjus（悬浮窗桥接 — Android WindowManager）
+# 打包时由 buildozer 从源码编译加入 APK
+# Windows 环境不可用，用 try-except 保护
+# ══════════════════════════════════════════════════════════
+try:
+    import pyobjus  # noqa — 确保打包时 p4a 编译此库
+    _HAS_PYOBJUS = True
+except ImportError:
+    _HAS_PYOBJUS = False
+except Exception:
+    _HAS_PYOBJUS = False
+
 # ============================================================
 # 常量定义
 # ============================================================
