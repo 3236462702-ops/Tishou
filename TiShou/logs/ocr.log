@@ -1,0 +1,34 @@
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:12:45] [TiShou.ocr] [WARNING] easyocr 引擎预热失败，将使用无障碍引擎
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:12:45] [TiShou.ocr] [WARNING] accessible-android 未安装，无障碍引擎不可用
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:12:45] [TiShou.ocr] [WARNING] screencap 截屏失败: [WinError 2] 系统找不到指定的文件。
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] 所有截屏方式均失败
+[2026-06-15 19:12:45] [TiShou.ocr] [ERROR] 截屏失败，终止采集流程
+[2026-06-15 19:39:59] [TiShou.ocr] [WARNING] accessible-android 未安装，无障碍引擎不可用
+[2026-06-15 19:39:59] [TiShou.ocr] [WARNING] accessible-android 不可用，将使用 EasyOCR 兜底
+[2026-06-15 19:40:05] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] easyocr 引擎预热失败
+[2026-06-15 19:40:05] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] accessible-android 未安装，无障碍引擎不可用
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] 无障碍引擎不可用
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] 引擎 accessibility 未返回有效结果
+[2026-06-15 19:40:05] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] easyocr 未就绪
+[2026-06-15 19:40:05] [TiShou.ocr] [WARNING] 引擎 easyocr 未返回有效结果，所有引擎均尝试完毕
+[2026-06-15 19:40:05] [TiShou.ocr] [ERROR] 所有引擎均未返回有效结果
+[2026-06-15 19:40:51] [TiShou.ocr] [WARNING] accessible-android 未安装，无障碍引擎不可用
+[2026-06-15 19:40:51] [TiShou.ocr] [WARNING] accessible-android 不可用，将使用 EasyOCR 兜底
+[2026-06-15 19:40:56] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] easyocr 引擎预热失败
+[2026-06-15 19:40:56] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] accessible-android 未安装，无障碍引擎不可用
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] 无障碍引擎不可用
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] 引擎 accessibility 未返回有效结果
+[2026-06-15 19:40:56] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] easyocr 未就绪
+[2026-06-15 19:40:56] [TiShou.ocr] [WARNING] 引擎 easyocr 未返回有效结果，所有引擎均尝试完毕
+[2026-06-15 19:40:56] [TiShou.ocr] [ERROR] 所有引擎均未返回有效结果
+[2026-06-15 19:40:56] [TiShou.ocr] [ERROR] easyocr 模型加载失败: Missing C:\Users\admin/.EasyOCR//model\craft_mlt_25k.pth and downloads disabled

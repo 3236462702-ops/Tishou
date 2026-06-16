@@ -1,0 +1,35 @@
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 配置文件加载成功
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 工具模块初始化完成（调试包）
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 日志目录: C:\Users\admin\PyCharmMiscProject\TiShou\logs
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 配置文件: C:\Users\admin\PyCharmMiscProject\TiShou\config.json
+[2026-06-15 18:44:21] [TiShou.app] [WARNING] 执行一键重置配置...
+[2026-06-15 18:44:21] [TiShou.app] [INFO] 配置文件已重置为默认值
+[2026-06-15 18:48:18] [TiShou.app] [INFO] 配置文件加载成功
+[2026-06-15 18:48:18] [TiShou.app] [INFO] 工具模块初始化完成（调试包）
+[2026-06-15 18:48:18] [TiShou.app] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:48:18] [TiShou.app] [INFO] 日志目录: C:\Users\admin\PyCharmMiscProject\TiShou\logs
+[2026-06-15 18:48:18] [TiShou.app] [INFO] 配置文件: C:\Users\admin\PyCharmMiscProject\TiShou\config.json
+[2026-06-15 18:48:52] [TiShou.app] [INFO] 配置文件加载成功
+[2026-06-15 18:48:52] [TiShou.app] [INFO] 工具模块初始化完成（调试包）
+[2026-06-15 18:48:52] [TiShou.app] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:48:52] [TiShou.app] [INFO] 日志目录: C:\Users\admin\PyCharmMiscProject\TiShou\logs
+[2026-06-15 18:48:52] [TiShou.app] [INFO] 配置文件: C:\Users\admin\PyCharmMiscProject\TiShou\config.json
+[2026-06-15 18:48:53] [TiShou.app] [WARNING] 节点一（httpbin） 响应异常 (HTTP 503)，切换节点 2...
+[2026-06-15 18:48:56] [TiShou.app] [ERROR] 节点 2 也超时，判定为无网络
+[2026-06-15 18:48:56] [TiShou.app] [ERROR] 缓存文件损坏（JSON 解析失败）: test_key，清除后重新请求
+[2026-06-15 18:49:06] [TiShou.app] [WARNING] [node1] HTTP 503，切换下一节点...
+[2026-06-15 18:52:31] [TiShou.app] [INFO] 配置文件加载成功
+[2026-06-15 18:52:31] [TiShou.app] [INFO] 工具模块初始化完成（调试包）
+[2026-06-15 18:52:31] [TiShou.app] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:52:31] [TiShou.app] [INFO] 日志目录: C:\Users\admin\PyCharmMiscProject\TiShou\logs
+[2026-06-15 18:52:31] [TiShou.app] [INFO] 配置文件: C:\Users\admin\PyCharmMiscProject\TiShou\config.json
+[2026-06-15 19:03:31] [TiShou.app] [WARNING] 世界时间API 连接失败
+[2026-06-15 19:03:31] [TiShou.app] [WARNING] Taobao时间戳 连接失败
+[2026-06-15 19:03:32] [TiShou.app] [WARNING] API 全部失败，使用本地时间估算: 1781521412
+[2026-06-15 19:05:17] [TiShou.app] [WARNING] 世界时间API 连接失败
+[2026-06-15 19:05:17] [TiShou.app] [WARNING] Taobao时间戳 连接失败
+[2026-06-15 19:05:18] [TiShou.app] [WARNING] API 全部失败，使用本地时间估算: 1781521518
+[2026-06-15 19:05:18] [TiShou.app] [WARNING] 世界时间API 连接失败
+[2026-06-15 19:05:18] [TiShou.app] [WARNING] Taobao时间戳 连接失败
+[2026-06-15 19:05:19] [TiShou.app] [WARNING] API 全部失败，使用本地时间估算: 1781521519

@@ -1,0 +1,77 @@
+# =============================================================================
+# TiShou APK 自动打包工作流
+# =============================================================================
+# 触发方式：
+#   1. 推送 main 分支时自动构建
+#   2. 手动触发（Actions 页面点 Run workflow）
+#
+# 产物：
+#   - TiShou/bin/TiShou-*-debug.apk  （调试包，可直接安装）
+#
+# 使用步骤：
+#   1. 将本项目推送到 GitHub 仓库
+#   2. 进入 GitHub 仓库页面 → Actions → 点击 "Build Android APK"
+#   3. 等待约 30-60 分钟（首次需下载 SDK/NDK）
+#   4. 构建完成后，在 Workflow 运行结果页面下载 APK 附件
+#
+# 注意：
+#   - 免费额度：GitHub 免费账号每月 2000 分钟构建时长
+#   - 建议每次推送前先本地 python -m py_compile 检查语法
+# =============================================================================
+
+name: Build Android APK
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:        # 支持手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120    # 首次构建预留充足时间
+
+    steps:
+      # ---- 1. 检出代码 ----
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # ---- 2. 安装系统依赖（buildozer + python-for-android 所需） ----
+      - name: Install system dependencies
+        run: |
+          sudo apt update -qq
+          sudo apt install -y -qq \
+            git zip unzip openjdk-17-jdk python3-pip python3-dev \
+            autoconf autopoint libtool pkg-config zlib1g-dev \
+            libncurses5-dev libncursesw5-dev libtinfo5 cmake \
+            libffi-dev libssl-dev libltdl-dev gettext
+
+      # ---- 3. 安装 buildozer ----
+      - name: Install buildozer
+        run: |
+          pip3 install --user --upgrade buildozer cython
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # ---- 4. 验证 buildozer ----
+      - name: Verify buildozer
+        run: buildozer --version
+        working-directory: TiShou
+
+      # ---- 5. 运行 buildozer 构建 debug APK ----
+      - name: Build APK with buildozer
+        run: buildozer android debug 2>&1
+        working-directory: TiShou
+        env:
+          # 自动接受 SDK 许可证（buildozer.spec 已设 accept_sdk_license = True）
+          BUILDOZER_NO_TERMINAL: 1
+
+      # ---- 6. 上传 APK 产物 ----
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tishou-debug-apk
+          path: TiShou/bin/*.apk
+          if-no-files-found: error
+          retention-days: 30   # 保留 30 天

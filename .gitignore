@@ -1,0 +1,61 @@
+# =============================================================================
+# TiShou .gitignore
+# =============================================================================
+
+# ---- Python 缓存 ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ---- 虚拟环境 ----
+venv/
+.env/
+.venv/
+
+# ---- 日志文件 ----
+logs/*.log
+logs/export/
+
+# ---- 构建产物 ----
+bin/                    # buildozer APK 输出目录
+.buildozer/             # buildozer 构建缓存
+*.apk
+
+# ---- 本地配置（仅排除备份文件和 pip 配置，config.json 需要提交到仓库） ----
+config.json.bak
+pip.ini
+
+# ---- 编辑器/IDE ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- 操作系统 ----
+Thumbs.db
+.DS_Store
+
+# ---- 测试输出 ----
+test_*.txt
+test_*.output
+
+# ---- 截图缓存 ----
+captures/
+*.png
+*.jpg
+*.jpeg
+# 保留 assets 目录的结构，但不保留具体内容
+assets/*
+!assets/.gitkeep
+
+# ---- cache 目录 ----
+cache/
+
+# ---- Docker 构建缓存 ----
+.docker/

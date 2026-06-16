@@ -1,0 +1,59 @@
+# ============================================================
+# TiShou 项目依赖清单
+#
+# 【标准安装方式】（推荐，支持镜像自动切换+日志）：
+#   python pip_setup.py
+#
+# 手动安装（阿里云镜像优先，超时重试后切腾讯云）：
+#   pip install -r requirements.txt ^
+#       -i https://mirrors.aliyun.com/pypi/simple/ ^
+#       --trusted-host mirrors.aliyun.com ^
+#       --timeout 10 --retries 1
+# 若失败，自动切换腾讯云重试：
+#   pip install -r requirements.txt ^
+#       -i https://mirrors.cloud.tencent.com/pypi/simple/ ^
+#       --trusted-host mirrors.cloud.tencent.com ^
+#       --timeout 10 --retries 1
+#
+# 配置全局源（一次性）：
+#   python pip_setup.py
+#   或手动复制 pip.ini 到 %APPDATA%\pip\pip.ini
+#
+# 镜像策略：
+#   首选：阿里云 https://mirrors.aliyun.com/pypi/simple/
+#   备选：腾讯云 https://mirrors.cloud.tencent.com/pypi/simple/
+#   屏蔽：境外源 https://pypi.org/simple/
+#   超时：10秒 | 重试：1次
+#
+# 【Buildozer 打包须知】
+# 三个安卓专属库（accessible-android, android-permissions, android-apps）
+# 不存在于 PyPI，无法通过 pip 安装。
+# 它们必须在 buildozer.spec 的 requirements 中列出，
+# 由 python-for-android 在编译 APK 时从源码构建加入。
+# 代码中通过 try-except ImportError 包裹 import 语句，
+# Windows 开发环境运行时这三个库不会被导入。
+# ============================================================
+
+# ---- 网络请求 ----
+requests>=2.31.0
+
+# ---- UI框架（HyperOS+iOS融合风） ----
+Kivy>=2.3.0
+
+# ---- 图像处理（OCR预处理） ----
+pillow>=10.0.0
+
+# ---- 本地OCR引擎 ----
+easyocr>=1.7.0
+
+# ---- 安卓桥接（必需：悬浮窗/通知/保活） ----
+pyjnius>=1.6.0
+
+# ---- 音效播放（pygame.mixer / Android MediaPlayer） ----
+pygame>=2.5.0
+
+# ---- 数值运算（音效波形生成） ----
+numpy>=1.24.0
+
+# ---- 定时任务 ----
+schedule>=1.2.0

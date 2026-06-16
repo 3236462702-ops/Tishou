@@ -1,0 +1,17 @@
+{
+  "today": {
+    "date": "2026-06-16",
+    "success": 0,
+    "failed": 0
+  },
+  "total": {
+    "success": 0,
+    "failed": 0
+  },
+  "daily": {},
+  "meta": {
+    "last_reset": "2026-06-16T08:25:23.624437",
+    "created_at": "2026-06-16T08:25:23.624437",
+    "version": 1
+  }
+}

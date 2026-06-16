@@ -1,0 +1,561 @@
+
+======================================================================
+[2026-06-15 18:25:40] [TiShou] pip 安装日志 - 2026-06-15 18:25:40
+
+======================================================================
+[2026-06-15 18:25:40] [HEADER] TiShou 依赖安装工具
+[2026-06-15 18:25:40] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:25:40] [INFO] 首选镜像: 腾讯云
+[2026-06-15 18:25:40] [INFO] 日志文件: C:\Users\admin\PyCharmMiscProject\TiShou\logs\pip_setup.log
+[2026-06-15 18:25:40] [STEP] 镜像连通性测试
+[2026-06-15 18:25:40] [INFO] 超时: 10秒 | 重试: 1次
+[2026-06-15 18:25:40] [INFO] 正在测试 腾讯云 镜像连接...
+[2026-06-15 18:25:40] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:25:41] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:25:41] [WARN] 腾讯云 不可用: 腾讯云 所有测试路径均不可达
+[2026-06-15 18:25:41] [INFO] 正在测试 阿里云 镜像连接...
+[2026-06-15 18:25:41] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:25:41] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:25:41] [WARN] 阿里云 不可用: 阿里云 所有测试路径均不可达
+[2026-06-15 18:25:41] [WARN] 所有镜像不可达，将使用首选: 腾讯云
+[2026-06-15 18:25:41] [INFO] 最终选择: 腾讯云 | https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:25:41] [STEP] 配置 pip 全局镜像源
+[2026-06-15 18:25:41] [STEP] 配置 pip 全局源为 腾讯云...
+[2026-06-15 18:25:41] [INFO] 设置 index-url = https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:25:41] [WARN] pip 命令未找到，将直接写入配置文件
+[2026-06-15 18:25:41] [INFO] 已写入全局配置文件: C:\Users\admin\AppData\Roaming\pip\pip.ini
+[2026-06-15 18:25:41] [INFO] 内容预览:
+; ============================================================
+; TiShou pip 全局镜像配置
+; 自动生成时间: 2026-06-15 18:25:41
+; 策略: 腾讯云 优先，超时/重试后自动切换
+; ============================================================
+
+[global]
+index-url = https://mirrors.cloud.tencent.com/pypi/simple/
+trusted-host = mirrors.cloud.tencent.com
+               mirrors.cloud.tencent.com
+
+timeout = 10
+retries = 1
+
+; 屏蔽境外源
+disable-pip-version-check = true
+
+[install]
+trusted-host = mirrors.cloud.tencent.com
+               mirrors.cloud.tencent.com
+
+[list]
+format = columns
+[2026-06-15 18:25:41] [INFO] 已同步项目 pip.ini 到全局配置
+[2026-06-15 18:25:41] [STEP] 屏蔽境外源...
+[2026-06-15 18:25:41] [WARN] 屏蔽境外源时提示: [WinError 2] 系统找不到指定的文件。（已通过配置确保仅使用国内源）
+[2026-06-15 18:25:41] [STEP] 使用 腾讯云 安装依赖...
+[2026-06-15 18:25:41] [INFO] 需要安装 11 个依赖包
+[2026-06-15 18:25:41] [INFO] [1/11] 正在安装: requests>=2.31.0
+[2026-06-15 18:25:41] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:42] [ERROR]   ✗ requests>=2.31.0 安装失败
+[2026-06-15 18:25:42] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:42] [INFO] [2/11] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:25:42] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:43] [ERROR]   ✗ Kivy>=2.3.0 安装失败
+[2026-06-15 18:25:43] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:43] [INFO] [3/11] 正在安装: pillow>=10.0.0
+[2026-06-15 18:25:43] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:43] [ERROR]   ✗ pillow>=10.0.0 安装失败
+[2026-06-15 18:25:43] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:43] [INFO] [4/11] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:25:43] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:44] [ERROR]   ✗ easyocr>=1.7.0 安装失败
+[2026-06-15 18:25:44] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:44] [INFO] [5/11] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:25:44] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:44] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:25:44] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:44] [INFO] [6/11] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:25:44] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:45] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:25:45] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:45] [INFO] [7/11] 正在安装: pyobjus>=1.2.0
+[2026-06-15 18:25:45] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:45] [ERROR]   ✗ pyobjus>=1.2.0 安装失败
+[2026-06-15 18:25:45] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:45] [INFO] [8/11] 正在安装: playsound>=1.3.0
+[2026-06-15 18:25:45] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:46] [ERROR]   ✗ playsound>=1.3.0 安装失败
+[2026-06-15 18:25:46] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:46] [INFO] [9/11] 正在安装: psutil>=5.9.0
+[2026-06-15 18:25:46] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:47] [ERROR]   ✗ psutil>=5.9.0 安装失败
+[2026-06-15 18:25:47] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:47] [INFO] [10/11] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:25:47] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:47] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:25:47] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:47] [INFO] [11/11] 正在安装: schedule>=1.2.0
+[2026-06-15 18:25:47] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:48] [ERROR]   ✗ schedule>=1.2.0 安装失败
+[2026-06-15 18:25:48] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:48] [WARN] 腾讯云镜像安装部分失败，切换阿里云镜像重试失败项...
+[2026-06-15 18:25:48] [STEP] 使用 阿里云 安装依赖...
+[2026-06-15 18:25:48] [INFO] 需要安装 11 个依赖包
+[2026-06-15 18:25:48] [INFO] [1/11] 正在安装: requests>=2.31.0
+[2026-06-15 18:25:48] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:48] [ERROR]   ✗ requests>=2.31.0 安装失败
+[2026-06-15 18:25:48] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:48] [INFO] [2/11] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:25:48] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:49] [ERROR]   ✗ Kivy>=2.3.0 安装失败
+[2026-06-15 18:25:49] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:49] [INFO] [3/11] 正在安装: pillow>=10.0.0
+[2026-06-15 18:25:49] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:50] [ERROR]   ✗ pillow>=10.0.0 安装失败
+[2026-06-15 18:25:50] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:50] [INFO] [4/11] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:25:50] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:50] [ERROR]   ✗ easyocr>=1.7.0 安装失败
+[2026-06-15 18:25:50] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:50] [INFO] [5/11] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:25:50] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:51] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:25:51] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:51] [INFO] [6/11] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:25:51] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:51] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:25:51] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:51] [INFO] [7/11] 正在安装: pyobjus>=1.2.0
+[2026-06-15 18:25:51] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:52] [ERROR]   ✗ pyobjus>=1.2.0 安装失败
+[2026-06-15 18:25:52] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:52] [INFO] [8/11] 正在安装: playsound>=1.3.0
+[2026-06-15 18:25:52] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:53] [ERROR]   ✗ playsound>=1.3.0 安装失败
+[2026-06-15 18:25:53] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:53] [INFO] [9/11] 正在安装: psutil>=5.9.0
+[2026-06-15 18:25:53] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:53] [ERROR]   ✗ psutil>=5.9.0 安装失败
+[2026-06-15 18:25:53] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:53] [INFO] [10/11] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:25:53] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:54] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:25:54] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:54] [INFO] [11/11] 正在安装: schedule>=1.2.0
+[2026-06-15 18:25:54] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:25:54] [ERROR]   ✗ schedule>=1.2.0 安装失败
+[2026-06-15 18:25:54] [ERROR]     Configuration file contains invalid cp936 characters in C:\Users\admin\AppData\Roaming\pip\pip.ini.
+[2026-06-15 18:25:54] [STEP] 验证安装结果
+[2026-06-15 18:25:54] [STEP] 验证依赖安装状态...
+[2026-06-15 18:25:55] [WARN]   未检测到: requests
+[2026-06-15 18:25:56] [WARN]   未检测到: Kivy
+[2026-06-15 18:25:56] [WARN]   未检测到: pillow
+[2026-06-15 18:25:57] [WARN]   未检测到: easyocr
+[2026-06-15 18:25:57] [WARN]   未检测到: accessible-android
+[2026-06-15 18:25:58] [WARN]   未检测到: android-permissions
+[2026-06-15 18:25:59] [WARN]   未检测到: pyobjus
+[2026-06-15 18:25:59] [WARN]   未检测到: playsound
+[2026-06-15 18:26:00] [WARN]   未检测到: psutil
+[2026-06-15 18:26:00] [WARN]   未检测到: android-apps
+[2026-06-15 18:26:01] [WARN]   未检测到: schedule
+[2026-06-15 18:26:01] [WARN] 缺失 11 个依赖: requests, Kivy, pillow, easyocr, accessible-android, android-permissions, pyobjus, playsound, psutil, android-apps, schedule
+[2026-06-15 18:26:01] [HEADER] 安装摘要
+[2026-06-15 18:26:01] [INFO] 镜像配置: 腾讯云 
+[2026-06-15 18:26:01] [INFO] 配置状态: 成功
+[2026-06-15 18:26:01] [INFO] 安装状态: 部分失败
+[2026-06-15 18:26:01] [INFO] 缺失依赖: 11 个
+[2026-06-15 18:26:01] [WARN] 缺失包: requests, Kivy, pillow, easyocr, accessible-android, android-permissions, pyobjus, playsound, psutil, android-apps, schedule
+[2026-06-15 18:26:01] [INFO] 可重新运行: python pip_setup.py --auto
+
+
+======================================================================
+[2026-06-15 18:28:16] [TiShou] pip 安装日志 - 2026-06-15 18:28:16
+
+======================================================================
+[2026-06-15 18:28:16] [HEADER] TiShou 依赖安装工具
+[2026-06-15 18:28:16] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:28:16] [INFO] 首选镜像: 腾讯云
+[2026-06-15 18:28:16] [INFO] 日志文件: C:\Users\admin\PyCharmMiscProject\TiShou\logs\pip_setup.log
+[2026-06-15 18:28:16] [STEP] 镜像连通性测试
+[2026-06-15 18:28:16] [INFO] 超时: 10秒 | 重试: 1次
+[2026-06-15 18:28:16] [INFO] 正在测试 腾讯云 镜像连接...
+[2026-06-15 18:28:16] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:28:16] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:28:16] [WARN] 腾讯云 不可用: 腾讯云 所有测试路径均不可达
+[2026-06-15 18:28:16] [INFO] 正在测试 阿里云 镜像连接...
+[2026-06-15 18:28:16] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:28:17] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:28:17] [WARN] 阿里云 不可用: 阿里云 所有测试路径均不可达
+[2026-06-15 18:28:17] [WARN] 所有镜像不可达，将使用首选: 腾讯云
+[2026-06-15 18:28:17] [INFO] 最终选择: 腾讯云 | https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:28:17] [STEP] 配置 pip 全局镜像源
+[2026-06-15 18:28:17] [STEP] Configuring pip global source: 腾讯云...
+[2026-06-15 18:28:17] [INFO] Set index-url = https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:28:17] [INFO] Set trusted-host = mirrors.cloud.tencent.com
+[2026-06-15 18:28:18] [INFO] Set timeout = 10
+[2026-06-15 18:28:18] [INFO] Set retries = 1
+[2026-06-15 18:28:19] [INFO] Disable version check (block foreign)
+[2026-06-15 18:28:20] [INFO] Verifying pip config...
+[2026-06-15 18:28:20] [INFO]   Config: global.disable-pip-version-check='true'
+[2026-06-15 18:28:20] [INFO]   Config: global.index-url='https://mirrors.cloud.tencent.com/pypi/simple/'
+[2026-06-15 18:28:20] [INFO]   Config: global.retries='1'
+[2026-06-15 18:28:20] [INFO]   Config: global.timeout='10'
+[2026-06-15 18:28:20] [INFO]   Config: global.trusted-host='mirrors.cloud.tencent.com'
+[2026-06-15 18:28:20] [INFO] Pip global source configured: 腾讯云
+[2026-06-15 18:28:20] [STEP] Blocking foreign sources...
+[2026-06-15 18:28:21] [INFO] Foreign sources blocked - index-url bound to domestic mirrors only
+[2026-06-15 18:28:21] [INFO]    - Blocked: https://pypi.org/simple/
+[2026-06-15 18:28:21] [INFO]    - Blocked: https://pypi.python.org/simple/
+[2026-06-15 18:28:21] [STEP] 使用 腾讯云 安装依赖...
+[2026-06-15 18:28:21] [INFO] 需要安装 11 个依赖包
+[2026-06-15 18:28:21] [INFO] [1/11] 正在安装: requests>=2.31.0
+[2026-06-15 18:28:21] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:28:25] [INFO]   ✓ requests>=2.31.0 安装成功
+[2026-06-15 18:28:25] [INFO]     Collecting requests>=2.31.0
+[2026-06-15 18:28:25] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl (73 kB)
+[2026-06-15 18:28:25] [INFO]     Collecting charset_normalizer<4,>=2 (from requests>=2.31.0)
+[2026-06-15 18:28:25] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/20/d9/5f67790f06b735d7c7637171bbfd89882ad67201891b7275e51116ed8207/charset_normalizer-3.4.7-cp311-cp311-win_amd64.whl (159 kB)
+[2026-06-15 18:28:25] [INFO]     Collecting idna<4,>=2.5 (from requests>=2.31.0)
+[2026-06-15 18:28:25] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl (65 kB)
+[2026-06-15 18:28:25] [INFO]     Collecting urllib3<3,>=1.26 (from requests>=2.31.0)
+[2026-06-15 18:28:25] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl (131 kB)
+[2026-06-15 18:28:25] [INFO]     Collecting certifi>=2023.5.7 (from requests>=2.31.0)
+[2026-06-15 18:28:25] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/59/8c/57e832b7af6d7c5abe66eb3fbe3a3a32f4d11ea23a1aa7131371035be991/certifi-2026.5.20-py3-none-any.whl (134 kB)
+[2026-06-15 18:28:25] [INFO]     Successfully installed certifi-2026.5.20 charset_normalizer-3.4.7 idna-3.18 requests-2.34.2 urllib3-2.7.0
+[2026-06-15 18:28:25] [INFO] [2/11] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:28:25] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:28:44] [INFO]   ✓ Kivy>=2.3.0 安装成功
+[2026-06-15 18:28:44] [INFO]     Collecting Kivy>=2.3.0
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/62/52/a95bb60501aacf2ff8477f8c2e6b90324c1d48a917bd822d3cccb664cdad/Kivy-2.3.1-cp311-cp311-win_amd64.whl (4.6 MB)
+[2026-06-15 18:28:44] [INFO]     Collecting Kivy-Garden>=0.1.4 (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/6a/55/cd1555bde62f809219cbc5d8a0836b0293399da2f4ba4e8ee84b6a7cc393/Kivy_Garden-0.1.5-py3-none-any.whl (4.6 kB)
+[2026-06-15 18:28:44] [INFO]     Collecting docutils (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/32/91/30151a39f7570f448ed84529390628a651d7f27c87d73c9b887f8189695e/docutils-0.23-py3-none-any.whl (634 kB)
+[2026-06-15 18:28:44] [INFO]     Collecting pygments (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/f4/7e/a72dd26f3b0f4f2bf1dd8923c85f7ceb43172af56d63c7383eb62b332364/pygments-2.20.0-py3-none-any.whl (1.2 MB)
+[2026-06-15 18:28:44] [INFO]     Collecting filetype (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/18/79/1b8fa1bb3568781e84c9200f951c735f3f157429f44be0495da55894d620/filetype-1.2.0-py2.py3-none-any.whl (19 kB)
+[2026-06-15 18:28:44] [INFO]     Collecting kivy-deps.angle~=0.4.0 (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/c3/b1/d1ca22a7b18e7b2b90152a78a0c2d09a96fdb924f87be1914d70d9bee543/kivy_deps.angle-0.4.0-cp311-cp311-win_amd64.whl (5.1 MB)
+[2026-06-15 18:28:44] [INFO]     Collecting kivy-deps.sdl2~=0.8.0 (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/4d/a5/d0605aea79495cc430807fb33f0615fe0a9cadb05da45fc6faa6f126a9fd/kivy_deps.sdl2-0.8.0-cp311-cp311-win_amd64.whl (4.2 MB)
+[2026-06-15 18:28:44] [INFO]     Collecting kivy-deps.glew~=0.3.1 (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d6/37/884034260818569547347cc2ba89780ff3f83a9ce6b9a894360c1d86e82c/kivy_deps.glew-0.3.1-cp311-cp311-win_amd64.whl (123 kB)
+[2026-06-15 18:28:44] [INFO]     Collecting pypiwin32 (from Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d0/1b/2f292bbd742e369a100c91faa0483172cd91a1a422a6692055ac920946c5/pypiwin32-223-py3-none-any.whl (1.7 kB)
+[2026-06-15 18:28:44] [INFO]     Collecting pywin32>=223 (from pypiwin32->Kivy>=2.3.0)
+[2026-06-15 18:28:44] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/35/c4/dcd2d62b5944b6d5db53413a5899016ccd57ffcb7278f3f81655d25d2027/pywin32-312-cp311-cp311-win_amd64.whl (6.9 MB)
+[2026-06-15 18:28:44] [INFO]     Successfully installed Kivy-2.3.1 Kivy-Garden-0.1.5 docutils-0.23 filetype-1.2.0 kivy-deps.angle-0.4.0 kivy-deps.glew-0.3.1 kivy-deps.sdl2-0.8.0 pygments-2.20.0 pypiwin32-223 pywin32-312
+[2026-06-15 18:28:44] [INFO] [3/11] 正在安装: pillow>=10.0.0
+[2026-06-15 18:28:44] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:28:47] [INFO]   ✓ pillow>=10.0.0 安装成功
+[2026-06-15 18:28:47] [INFO]     Collecting pillow>=10.0.0
+[2026-06-15 18:28:47] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/69/42/836b6f3cd7f3e5fa10a1f1a5420447c17966044c8fbf589cc0452d5502db/pillow-12.2.0-cp311-cp311-win_amd64.whl (7.1 MB)
+[2026-06-15 18:28:47] [INFO]     Successfully installed pillow-12.2.0
+[2026-06-15 18:28:47] [INFO] [4/11] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:28:47] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:36] [INFO]   ✓ easyocr>=1.7.0 安装成功
+[2026-06-15 18:30:36] [INFO]     Collecting easyocr>=1.7.0
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/bb/84/4a2cab0e6adde6a85e7ba543862e5fc0250c51f3ac721a078a55cdcff250/easyocr-1.7.2-py3-none-any.whl (2.9 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting torch (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/12/1b/a61ce2004f9ab0ea8964a6e6168133a127795667639e2ff4f8f2bdb16a65/torch-2.12.0-cp311-cp311-win_amd64.whl (123.0 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting torchvision>=0.5 (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/19/aa/929b358b1a643849b81ec95569938044cc37dc65ab10c84eb6d82fe1bfbb/torchvision-0.27.0-cp311-cp311-win_amd64.whl (3.7 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting opencv-python-headless (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/4a/90/b338326131ccb2aaa3c2c85d00f41822c0050139a4bfe723cfd95455bd2d/opencv_python_headless-4.13.0.92-cp37-abi3-win_amd64.whl (40.1 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting scipy (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/95/da/0d1df507cf574b3f224ccc3d45244c9a1d732c81dcb26b1e8a766ae271a8/scipy-1.17.1-cp311-cp311-win_amd64.whl (36.6 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting numpy (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/c5/31/7fc6239c12bce7e931463251cca4426c465e1876ba3cc785402ef4dd8f4e/numpy-2.4.6-cp311-cp311-win_amd64.whl (12.6 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting scikit-image (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d3/c6/2eeacf173da041a9e388975f54e5c49df750757fcfc3ee293cdbbae1ea0a/scikit_image-0.26.0-cp311-cp311-win_amd64.whl (11.9 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting python-bidi (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d5/56/80366cec51f08346269c1b64ede5e8b6decdcaf8a5f0ae5eb7a7e022d160/python_bidi-0.6.10-cp311-cp311-win_amd64.whl (166 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting PyYAML (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/da/e3/ea007450a105ae919a72393cb06f122f288ef60bba2dc64b26e2646fa315/pyyaml-6.0.3-cp311-cp311-win_amd64.whl (158 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting Shapely (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/38/1e/3f8ea46353c2a33c1669eb7327f9665103aa3a8dfe7f2e4ef714c210b2c2/shapely-2.1.2-cp311-cp311-win_amd64.whl (1.7 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting pyclipper (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/3a/76/4901de2919198bb2bd3d989f86d4a1dff363962425bb2d63e24e6c990042/pyclipper-1.4.0-cp311-cp311-win_amd64.whl (104 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting ninja (from easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/29/45/c0adfbfb0b5895aa18cec400c535b4f7ff3e52536e0403602fc1a23f7de9/ninja-1.13.0-py3-none-win_amd64.whl (309 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting filelock (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/13/37/a065dc3bd6e49423a6532c642ca7378d3f467b1ef44c2800c937af7f9739/filelock-3.29.4-py3-none-any.whl (42 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting typing-extensions>=4.10.0 (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting sympy>=1.13.3 (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl (6.3 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting networkx>=2.5.1 (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/9e/c9/b2622292ea83fbb4ec318f5b9ab867d0a28ab43c5717bb85b0a5f6b3b0a4/networkx-3.6.1-py3-none-any.whl (2.1 MB)
+[2026-06-15 18:30:36] [INFO]     Collecting jinja2 (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl (134 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting fsspec>=0.8.5 (from torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d5/0c/043d5e551459da400957a1395e0febbf771446ff34291afcbe3d8be2a279/fsspec-2026.4.0-py3-none-any.whl (203 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting imageio!=2.35.0,>=2.33 (from scikit-image->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/49/fa/391e437a34e55095173dca5f24070d89cbc233ff85bf1c29c93248c6588d/imageio-2.37.3-py3-none-any.whl (317 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting tifffile>=2022.8.12 (from scikit-image->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/1a/e4/e804505f87627cd8cdae9c010c47c4485fd8c1ce31a7dd0ab7fcc4707377/tifffile-2026.3.3-py3-none-any.whl (243 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting packaging>=21 (from scikit-image->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/df/b2/87e62e8c3e2f4b32e5fe99e0b86d576da1312593b39f47d8ceef365e95ed/packaging-26.2-py3-none-any.whl (100 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting lazy-loader>=0.4 (from scikit-image->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/8a/a1/8d812e53a5da1687abb10445275d41a8b13adb781bbf7196ddbcf8d88505/lazy_loader-0.5-py3-none-any.whl (8.0 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting mpmath<1.4,>=1.1.0 (from sympy>=1.13.3->torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl (536 kB)
+[2026-06-15 18:30:36] [INFO]     Collecting MarkupSafe>=2.0 (from jinja2->torch->easyocr>=1.7.0)
+[2026-06-15 18:30:36] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/83/8a/4414c03d3f891739326e1783338e48fb49781cc915b2e0ee052aa490d586/markupsafe-3.0.3-cp311-cp311-win_amd64.whl (15 kB)
+[2026-06-15 18:30:36] [INFO]     Successfully installed MarkupSafe-3.0.3 PyYAML-6.0.3 Shapely-2.1.2 easyocr-1.7.2 filelock-3.29.4 fsspec-2026.4.0 imageio-2.37.3 jinja2-3.1.6 lazy-loader-0.5 mpmath-1.3.0 networkx-3.6.1 ninja-1.13.0 numpy-2.4.6 opencv-python-headless-4.13.0.92 packaging-26.2 pyclipper-1.4.0 python-bidi-0.6.10 scikit-image-0.26.0 scipy-1.17.1 sympy-1.14.0 tifffile-2026.3.3 torch-2.12.0 torchvision-0.27.0 typing-extensions-4.15.0
+[2026-06-15 18:30:36] [INFO] [5/11] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:30:36] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:38] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:30:38] [ERROR]     ERROR: Could not find a version that satisfies the requirement accessible-android>=1.0.0 (from versions: none)
+[2026-06-15 18:30:38] [ERROR]     ERROR: No matching distribution found for accessible-android>=1.0.0
+[2026-06-15 18:30:38] [INFO] [6/11] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:30:38] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:40] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:30:40] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-permissions>=1.0.0 (from versions: none)
+[2026-06-15 18:30:40] [ERROR]     ERROR: No matching distribution found for android-permissions>=1.0.0
+[2026-06-15 18:30:40] [INFO] [7/11] 正在安装: pyobjus>=1.2.0
+[2026-06-15 18:30:40] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:41] [ERROR]   ✗ pyobjus>=1.2.0 安装失败
+[2026-06-15 18:30:41] [ERROR]     ERROR: The tar file (C:\Users\admin\AppData\Local\Temp\1\pip-unpack-u47oaeen\pyobjus-1.2.4.tar.gz) has a file (C:\Users\admin\AppData\Local\Temp\1\pip-install-sst3o05s\pyobjus_f74363184b9f4c6d8964c9f91efde7c5\objc_classes/aux) trying to install outside target directory (C:\Users\admin\AppData\Local\Temp\1\pip-install-sst3o05s\pyobjus_f74363184b9f4c6d8964c9f91efde7c5)
+[2026-06-15 18:30:41] [INFO] [8/11] 正在安装: playsound>=1.3.0
+[2026-06-15 18:30:41] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:47] [ERROR]   ✗ playsound>=1.3.0 安装失败
+[2026-06-15 18:30:47] [ERROR]     error: subprocess-exited-with-error
+[2026-06-15 18:30:47] [ERROR]     Getting requirements to build wheel did not run successfully.
+[2026-06-15 18:30:47] [ERROR]     exit code: 1
+[2026-06-15 18:30:47] [ERROR]     [28 lines of output]
+[2026-06-15 18:30:47] [ERROR]     Traceback (most recent call last):
+[2026-06-15 18:30:47] [ERROR]     File "C:\Users\admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 353, in <module>
+[2026-06-15 18:30:47] [ERROR]     main()
+[2026-06-15 18:30:47] [ERROR]     File "C:\Users\admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 335, in main
+[2026-06-15 18:30:47] [INFO] [9/11] 正在安装: psutil>=5.9.0
+[2026-06-15 18:30:47] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:49] [INFO]   ✓ psutil>=5.9.0 安装成功
+[2026-06-15 18:30:49] [INFO]     Collecting psutil>=5.9.0
+[2026-06-15 18:30:49] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl (137 kB)
+[2026-06-15 18:30:49] [INFO]     Successfully installed psutil-7.2.2
+[2026-06-15 18:30:49] [INFO] [10/11] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:30:49] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:50] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:30:50] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-apps>=1.0.0 (from versions: none)
+[2026-06-15 18:30:50] [ERROR]     ERROR: No matching distribution found for android-apps>=1.0.0
+[2026-06-15 18:30:50] [INFO] [11/11] 正在安装: schedule>=1.2.0
+[2026-06-15 18:30:50] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:52] [INFO]   ✓ schedule>=1.2.0 安装成功
+[2026-06-15 18:30:52] [INFO]     Collecting schedule>=1.2.0
+[2026-06-15 18:30:52] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/20/a7/84c96b61fd13205f2cafbe263cdb2745965974bdf3e0078f121dfeca5f02/schedule-1.2.2-py3-none-any.whl (12 kB)
+[2026-06-15 18:30:52] [INFO]     Successfully installed schedule-1.2.2
+[2026-06-15 18:30:52] [WARN] 腾讯云镜像安装部分失败，切换阿里云镜像重试失败项...
+[2026-06-15 18:30:52] [STEP] 使用 阿里云 安装依赖...
+[2026-06-15 18:30:52] [INFO] 需要安装 11 个依赖包
+[2026-06-15 18:30:52] [INFO] [1/11] 正在安装: requests>=2.31.0
+[2026-06-15 18:30:52] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:54] [INFO]   ✓ requests>=2.31.0 安装成功
+[2026-06-15 18:30:54] [INFO] [2/11] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:30:54] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:56] [INFO]   ✓ Kivy>=2.3.0 安装成功
+[2026-06-15 18:30:56] [INFO] [3/11] 正在安装: pillow>=10.0.0
+[2026-06-15 18:30:56] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:57] [INFO]   ✓ pillow>=10.0.0 安装成功
+[2026-06-15 18:30:57] [INFO] [4/11] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:30:57] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:30:59] [INFO]   ✓ easyocr>=1.7.0 安装成功
+[2026-06-15 18:30:59] [INFO] [5/11] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:30:59] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:01] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:31:01] [ERROR]     ERROR: Could not find a version that satisfies the requirement accessible-android>=1.0.0 (from versions: none)
+[2026-06-15 18:31:01] [ERROR]     ERROR: No matching distribution found for accessible-android>=1.0.0
+[2026-06-15 18:31:01] [INFO] [6/11] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:31:01] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:02] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:31:02] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-permissions>=1.0.0 (from versions: none)
+[2026-06-15 18:31:02] [ERROR]     ERROR: No matching distribution found for android-permissions>=1.0.0
+[2026-06-15 18:31:02] [INFO] [7/11] 正在安装: pyobjus>=1.2.0
+[2026-06-15 18:31:02] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:05] [ERROR]   ✗ pyobjus>=1.2.0 安装失败
+[2026-06-15 18:31:05] [ERROR]     ERROR: The tar file (C:\Users\admin\AppData\Local\Temp\1\pip-unpack-3x1601ae\pyobjus-1.2.4.tar.gz) has a file (C:\Users\admin\AppData\Local\Temp\1\pip-install-voxyqb21\pyobjus_a05c91b7d52647309091aab24f9d0991\objc_classes/aux) trying to install outside target directory (C:\Users\admin\AppData\Local\Temp\1\pip-install-voxyqb21\pyobjus_a05c91b7d52647309091aab24f9d0991)
+[2026-06-15 18:31:05] [INFO] [8/11] 正在安装: playsound>=1.3.0
+[2026-06-15 18:31:05] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:12] [ERROR]   ✗ playsound>=1.3.0 安装失败
+[2026-06-15 18:31:12] [ERROR]     error: subprocess-exited-with-error
+[2026-06-15 18:31:12] [ERROR]     Getting requirements to build wheel did not run successfully.
+[2026-06-15 18:31:12] [ERROR]     exit code: 1
+[2026-06-15 18:31:12] [ERROR]     [28 lines of output]
+[2026-06-15 18:31:12] [ERROR]     Traceback (most recent call last):
+[2026-06-15 18:31:12] [ERROR]     File "C:\Users\admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 353, in <module>
+[2026-06-15 18:31:12] [ERROR]     main()
+[2026-06-15 18:31:12] [ERROR]     File "C:\Users\admin\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip\_vendor\pyproject_hooks\_in_process\_in_process.py", line 335, in main
+[2026-06-15 18:31:12] [INFO] [9/11] 正在安装: psutil>=5.9.0
+[2026-06-15 18:31:12] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:14] [INFO]   ✓ psutil>=5.9.0 安装成功
+[2026-06-15 18:31:14] [INFO] [10/11] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:31:14] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:15] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:31:15] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-apps>=1.0.0 (from versions: none)
+[2026-06-15 18:31:15] [ERROR]     ERROR: No matching distribution found for android-apps>=1.0.0
+[2026-06-15 18:31:15] [INFO] [11/11] 正在安装: schedule>=1.2.0
+[2026-06-15 18:31:15] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:31:16] [INFO]   ✓ schedule>=1.2.0 安装成功
+[2026-06-15 18:31:16] [STEP] 验证安装结果
+[2026-06-15 18:31:16] [STEP] 验证依赖安装状态...
+[2026-06-15 18:31:17] [INFO]   ✓ requests
+[2026-06-15 18:31:19] [INFO]   ✓ Kivy
+[2026-06-15 18:31:20] [INFO]   ✓ pillow
+[2026-06-15 18:31:21] [INFO]   ✓ easyocr
+[2026-06-15 18:31:22] [WARN]   未检测到: accessible-android
+[2026-06-15 18:31:23] [WARN]   未检测到: android-permissions
+[2026-06-15 18:31:24] [WARN]   未检测到: pyobjus
+[2026-06-15 18:31:25] [WARN]   未检测到: playsound
+[2026-06-15 18:31:26] [INFO]   ✓ psutil
+[2026-06-15 18:31:27] [WARN]   未检测到: android-apps
+[2026-06-15 18:31:28] [INFO]   ✓ schedule
+[2026-06-15 18:31:28] [WARN] 缺失 5 个依赖: accessible-android, android-permissions, pyobjus, playsound, android-apps
+[2026-06-15 18:31:28] [HEADER] 安装摘要
+[2026-06-15 18:31:28] [INFO] 镜像配置: 腾讯云 
+[2026-06-15 18:31:28] [INFO] 配置状态: 成功
+[2026-06-15 18:31:28] [INFO] 安装状态: 部分失败
+[2026-06-15 18:31:28] [INFO] 缺失依赖: 5 个
+[2026-06-15 18:31:28] [WARN] 缺失包: accessible-android, android-permissions, pyobjus, playsound, android-apps
+[2026-06-15 18:31:28] [INFO] 可重新运行: python pip_setup.py --auto
+
+
+======================================================================
+[2026-06-15 18:38:30] [TiShou] pip 安装日志 - 2026-06-15 18:38:30
+
+======================================================================
+[2026-06-15 18:38:30] [HEADER] TiShou 依赖安装工具
+[2026-06-15 18:38:30] [INFO] 项目目录: C:\Users\admin\PyCharmMiscProject\TiShou
+[2026-06-15 18:38:30] [INFO] 首选镜像: 腾讯云
+[2026-06-15 18:38:30] [INFO] 日志文件: C:\Users\admin\PyCharmMiscProject\TiShou\logs\pip_setup.log
+[2026-06-15 18:38:30] [STEP] 镜像连通性测试
+[2026-06-15 18:38:30] [INFO] 超时: 10秒 | 重试: 1次
+[2026-06-15 18:38:30] [INFO] 正在测试 腾讯云 镜像连接...
+[2026-06-15 18:38:30] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:38:31] [WARN] 腾讯云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:38:31] [WARN] 腾讯云 不可用: 腾讯云 所有测试路径均不可达
+[2026-06-15 18:38:31] [INFO] 正在测试 阿里云 镜像连接...
+[2026-06-15 18:38:31] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/requests/json
+[2026-06-15 18:38:31] [WARN] 阿里云 连接失败 | 错误: Not Found | 路径: /pypi/pip/json
+[2026-06-15 18:38:31] [WARN] 阿里云 不可用: 阿里云 所有测试路径均不可达
+[2026-06-15 18:38:31] [WARN] 所有镜像不可达，将使用首选: 腾讯云
+[2026-06-15 18:38:31] [INFO] 最终选择: 腾讯云 | https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:38:31] [STEP] 配置 pip 全局镜像源
+[2026-06-15 18:38:31] [STEP] Configuring pip global source: 腾讯云...
+[2026-06-15 18:38:31] [INFO] Set index-url = https://mirrors.cloud.tencent.com/pypi/simple/
+[2026-06-15 18:38:32] [INFO] Set trusted-host = mirrors.cloud.tencent.com
+[2026-06-15 18:38:32] [INFO] Set timeout = 10
+[2026-06-15 18:38:33] [INFO] Set retries = 1
+[2026-06-15 18:38:33] [INFO] Disable version check (block foreign)
+[2026-06-15 18:38:34] [INFO] Verifying pip config...
+[2026-06-15 18:38:35] [INFO]   Config: global.disable-pip-version-check='true'
+[2026-06-15 18:38:35] [INFO]   Config: global.index-url='https://mirrors.cloud.tencent.com/pypi/simple/'
+[2026-06-15 18:38:35] [INFO]   Config: global.no-index-url='false'
+[2026-06-15 18:38:35] [INFO]   Config: global.retries='1'
+[2026-06-15 18:38:35] [INFO]   Config: global.timeout='10'
+[2026-06-15 18:38:35] [INFO]   Config: global.trusted-host='mirrors.cloud.tencent.com'
+[2026-06-15 18:38:35] [INFO] Pip global source configured: 腾讯云
+[2026-06-15 18:38:35] [STEP] Blocking foreign sources...
+[2026-06-15 18:38:35] [INFO] Foreign sources blocked - index-url bound to domestic mirrors only
+[2026-06-15 18:38:35] [INFO]    - Blocked: https://pypi.org/simple/
+[2026-06-15 18:38:35] [INFO]    - Blocked: https://pypi.python.org/simple/
+[2026-06-15 18:38:35] [STEP] 使用 腾讯云 安装依赖...
+[2026-06-15 18:38:35] [INFO] 需要安装 10 个依赖包
+[2026-06-15 18:38:35] [INFO] [1/10] 正在安装: requests>=2.31.0
+[2026-06-15 18:38:35] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:37] [INFO]   ✓ requests>=2.31.0 安装成功
+[2026-06-15 18:38:37] [INFO] [2/10] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:38:37] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:38] [INFO]   ✓ Kivy>=2.3.0 安装成功
+[2026-06-15 18:38:38] [INFO] [3/10] 正在安装: pillow>=10.0.0
+[2026-06-15 18:38:38] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:40] [INFO]   ✓ pillow>=10.0.0 安装成功
+[2026-06-15 18:38:40] [INFO] [4/10] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:38:40] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:42] [INFO]   ✓ easyocr>=1.7.0 安装成功
+[2026-06-15 18:38:42] [INFO] [5/10] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:38:42] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:43] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:38:43] [ERROR]     ERROR: Could not find a version that satisfies the requirement accessible-android>=1.0.0 (from versions: none)
+[2026-06-15 18:38:43] [ERROR]     ERROR: No matching distribution found for accessible-android>=1.0.0
+[2026-06-15 18:38:43] [INFO] [6/10] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:38:43] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:44] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:38:44] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-permissions>=1.0.0 (from versions: none)
+[2026-06-15 18:38:44] [ERROR]     ERROR: No matching distribution found for android-permissions>=1.0.0
+[2026-06-15 18:38:44] [INFO] [7/10] 正在安装: pygame>=2.5.0
+[2026-06-15 18:38:44] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:58] [INFO]   ✓ pygame>=2.5.0 安装成功
+[2026-06-15 18:38:58] [INFO]     Collecting pygame>=2.5.0
+[2026-06-15 18:38:58] [INFO]     Downloading https://mirrors.cloud.tencent.com/pypi/packages/d2/55/ca3eb851aeef4f6f2e98a360c201f0d00bd1ba2eb98e2c7850d80aabc526/pygame-2.6.1-cp311-cp311-win_amd64.whl (10.6 MB)
+[2026-06-15 18:38:58] [INFO]     Successfully installed pygame-2.6.1
+[2026-06-15 18:38:58] [INFO] [8/10] 正在安装: psutil>=5.9.0
+[2026-06-15 18:38:58] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:38:59] [INFO]   ✓ psutil>=5.9.0 安装成功
+[2026-06-15 18:38:59] [INFO] [9/10] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:38:59] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:00] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:39:00] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-apps>=1.0.0 (from versions: none)
+[2026-06-15 18:39:00] [ERROR]     ERROR: No matching distribution found for android-apps>=1.0.0
+[2026-06-15 18:39:00] [INFO] [10/10] 正在安装: schedule>=1.2.0
+[2026-06-15 18:39:00] [INFO]   → 源: 腾讯云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:02] [INFO]   ✓ schedule>=1.2.0 安装成功
+[2026-06-15 18:39:02] [WARN] 腾讯云镜像安装部分失败，切换阿里云镜像重试失败项...
+[2026-06-15 18:39:02] [STEP] 使用 阿里云 安装依赖...
+[2026-06-15 18:39:02] [INFO] 需要安装 10 个依赖包
+[2026-06-15 18:39:02] [INFO] [1/10] 正在安装: requests>=2.31.0
+[2026-06-15 18:39:02] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:03] [INFO]   ✓ requests>=2.31.0 安装成功
+[2026-06-15 18:39:03] [INFO] [2/10] 正在安装: Kivy>=2.3.0
+[2026-06-15 18:39:03] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:05] [INFO]   ✓ Kivy>=2.3.0 安装成功
+[2026-06-15 18:39:05] [INFO] [3/10] 正在安装: pillow>=10.0.0
+[2026-06-15 18:39:05] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:07] [INFO]   ✓ pillow>=10.0.0 安装成功
+[2026-06-15 18:39:07] [INFO] [4/10] 正在安装: easyocr>=1.7.0
+[2026-06-15 18:39:07] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:08] [INFO]   ✓ easyocr>=1.7.0 安装成功
+[2026-06-15 18:39:08] [INFO] [5/10] 正在安装: accessible-android>=1.0.0
+[2026-06-15 18:39:08] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:10] [ERROR]   ✗ accessible-android>=1.0.0 安装失败
+[2026-06-15 18:39:10] [ERROR]     ERROR: Could not find a version that satisfies the requirement accessible-android>=1.0.0 (from versions: none)
+[2026-06-15 18:39:10] [ERROR]     ERROR: No matching distribution found for accessible-android>=1.0.0
+[2026-06-15 18:39:10] [INFO] [6/10] 正在安装: android-permissions>=1.0.0
+[2026-06-15 18:39:10] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:11] [ERROR]   ✗ android-permissions>=1.0.0 安装失败
+[2026-06-15 18:39:11] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-permissions>=1.0.0 (from versions: none)
+[2026-06-15 18:39:11] [ERROR]     ERROR: No matching distribution found for android-permissions>=1.0.0
+[2026-06-15 18:39:11] [INFO] [7/10] 正在安装: pygame>=2.5.0
+[2026-06-15 18:39:11] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:13] [INFO]   ✓ pygame>=2.5.0 安装成功
+[2026-06-15 18:39:13] [INFO] [8/10] 正在安装: psutil>=5.9.0
+[2026-06-15 18:39:13] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:14] [INFO]   ✓ psutil>=5.9.0 安装成功
+[2026-06-15 18:39:14] [INFO] [9/10] 正在安装: android-apps>=1.0.0
+[2026-06-15 18:39:14] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:15] [ERROR]   ✗ android-apps>=1.0.0 安装失败
+[2026-06-15 18:39:15] [ERROR]     ERROR: Could not find a version that satisfies the requirement android-apps>=1.0.0 (from versions: none)
+[2026-06-15 18:39:15] [ERROR]     ERROR: No matching distribution found for android-apps>=1.0.0
+[2026-06-15 18:39:15] [INFO] [10/10] 正在安装: schedule>=1.2.0
+[2026-06-15 18:39:15] [INFO]   → 源: 阿里云 | 超时: 10s | 重试: 1次
+[2026-06-15 18:39:17] [INFO]   ✓ schedule>=1.2.0 安装成功
+[2026-06-15 18:39:17] [STEP] 验证安装结果
+[2026-06-15 18:39:17] [STEP] 验证依赖安装状态...
+[2026-06-15 18:39:18] [INFO]   ✓ requests
+[2026-06-15 18:39:19] [INFO]   ✓ Kivy
+[2026-06-15 18:39:20] [INFO]   ✓ pillow
+[2026-06-15 18:39:21] [INFO]   ✓ easyocr
+[2026-06-15 18:39:22] [WARN]   未检测到: accessible-android
+[2026-06-15 18:39:23] [WARN]   未检测到: android-permissions
+[2026-06-15 18:39:24] [INFO]   ✓ pygame
+[2026-06-15 18:39:25] [INFO]   ✓ psutil
+[2026-06-15 18:39:26] [WARN]   未检测到: android-apps
+[2026-06-15 18:39:27] [INFO]   ✓ schedule
+[2026-06-15 18:39:27] [WARN] 缺失 3 个依赖: accessible-android, android-permissions, android-apps
+[2026-06-15 18:39:27] [HEADER] 安装摘要
+[2026-06-15 18:39:27] [INFO] 镜像配置: 腾讯云 
+[2026-06-15 18:39:27] [INFO] 配置状态: 成功
+[2026-06-15 18:39:27] [INFO] 安装状态: 部分失败
+[2026-06-15 18:39:27] [INFO] 缺失依赖: 3 个
+[2026-06-15 18:39:27] [WARN] 缺失包: accessible-android, android-permissions, android-apps
+[2026-06-15 18:39:27] [INFO] 可重新运行: python pip_setup.py --auto
+
