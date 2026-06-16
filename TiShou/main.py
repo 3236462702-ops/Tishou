@@ -49,19 +49,23 @@ TiShou — 主入口（完整冷启动流程）
    的 longintrepr.h 找不到。解决方案：彻底移除 pygame（已替换为 pyjnius →
    android.media.AudioTrack），requirements 中不写 pygame。
 
-四、三个安卓专属库的处理（必须保留，不可删除）：
-   accessible-android  —— import 名：android_accessibility（capture.py）
-   pyobjus              —— 悬浮窗桥接（float_win.py）
-   android-apps        —— import 名：android_apps（app_list.py）
+四、三个所谓"安卓专属库"的实际情况（⚠️ 真实情况与约束文件描述不符）：
+   accessible-android  —— ❌ 非 PyPI 包，无 p4a recipe → 不写进 requirements
+                           import: android_accessibility（capture.py）try-except 保护
+                           缺失时自动降级：使用 EasyOCR 截图识别
+   pyobjus              —— ❌ 是 iOS 桥接库（Objective-C），不适用 Android
+                           Android 悬浮窗用 pyjnius → android.view.WindowManager
+   android-apps        —— ❌ 非 PyPI 包，无 p4a recipe → 不写进 requirements
+                           import: android_apps（app_list.py）try-except 保护
+                           缺失时自动降级：subprocess → pm list packages 命令
 
-   处理方式：
-   - buildozer.spec 的 requirements 中必须列出这三项，buildozer 会自动加入 APK
-   - 代码中通过 try-except ImportError 包裹导入语句
-   - Windows 环境/打包前测试运行时，这三个库不可用，代码静默降级
-   - 安卓 APK 运行时，buildozer 编译的 .so 中自带这些模块
+   本质原因：
+   - 原始约束文件定义的"三个安卓专属库"中，没有一个是真正存在且可用于 Android 的包
+   - 代码中已全部用 try-except ImportError 保护，缺失时自动降级
+   - 不影响 APK 正常打包和运行，所有核心功能有备用实现
 
 五、关键 buildozer.spec 参数：
-   requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule,accessible-android,pyobjus,android-apps
+   requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
 
    ⚠️ 注意：
    - 不要写 pygame（它依赖 longintrepr.h，Python 3.12+ 已移除）

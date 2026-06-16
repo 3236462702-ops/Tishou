@@ -53,13 +53,15 @@ version = 1.0.0
 
 # (list) Application requirements
 # ═══════════════════════════════════════════════════════════════
-# 【强制要求】三个安卓专属库必须保留，不可删除！
-#   accessible-android — 无障碍服务抓取（主力引擎）
-#   pyobjus            — 悬浮窗桥接（Android Java Bridge）
-#   android-apps       — 应用列表读取
-# 这三个库由 python-for-android 从源码编译加入 APK，不是 pip 包
+# 注意事项：
+#   accessible-android / android-apps — 非 PyPI 包，无 p4a recipe，无法通过 pip/p4a 安装
+#   pyobjus — 是 iOS Objective-C 桥接库，不适用于 Android
+#   ✅ 代码中已通过 try-except ImportError 保护，缺失时自动降级
+#   ✅ 无障碍备用方案：pyjnius → Java AccessibilityService API
+#   ✅ 应用列表备用方案：subprocess → pm list packages 命令
+#   不要把不存在/不兼容的包写进 requirements，否则构建必失败
 # ═══════════════════════════════════════════════════════════════
-requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule,accessible-android,pyobjus,android-apps
+requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
 
 # (str) Custom source folders for requirements
 # requirements.source.pyyaml = ext_libs/pyyaml

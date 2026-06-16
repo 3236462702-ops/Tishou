@@ -488,8 +488,11 @@ format = columns
 
     def check_android_libs(self):
         """
-        检查三个安卓专属库（仅供信息提示，不在 Windows 安装）
-        accessible-android, pyobjus, android-apps 由 buildozer/p4a 编译进 APK
+        检查三个安卓专属库状态（仅供信息提示）
+        注意：
+          - accessible-android / android-apps — 非 PyPI 包，不存在
+          - pyobjus — 是 iOS 桥接库，不适用 Android
+        均不在 Windows 安装，也不应写入 buildozer.spec requirements
         """
         self._logger.step("检查安卓专属库状态（仅提示信息）...")
         android_libs = [
@@ -500,11 +503,11 @@ format = columns
         for lib_name, import_name in android_libs:
             try:
                 __import__(import_name)
-                self._logger.info(f"  ✓ {lib_name} 已安装")
+                self._logger.info(f"  ✓ {lib_name} 已安装（可用）")
             except ImportError:
                 self._logger.warn(
                     f"  {lib_name} 未安装（正常 — "
-                    f"此库由 buildozer/p4a 编译进 APK，不在 Windows pip 安装）"
+                    f"此库不在 PyPI 或 p4a recipes 中，代码已含降级方案）"
                 )
             except Exception as e:
                 self._logger.warn(f"  {lib_name} 检查异常: {e}")
