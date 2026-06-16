@@ -53,7 +53,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # 兼容 pip 的包（可从 PyPI 安装）+ 三个安卓专属库（由 p4a 源码编译）
-requirements = python3,Kivy==2.3.0,pyjnius,requests,easyocr,pillow,pygame,numpy==1.24.4,schedule,accessible-android,android-permissions,android-apps
+requirements = python3,Kivy==2.3.0,pyjnius,requests,easyocr,pillow,pygame,numpy,schedule,accessible-android,android-permissions,android-apps
 
 # (str) Custom source folders for requirements
 # requirements.source.pyyaml = ext_libs/pyyaml
@@ -94,7 +94,7 @@ android.minapi = 26
 # android.sdk = 24
 
 # (str) Android NDK version to use
-android.ndk = 25b
+android.ndk = 26d
 
 # (bool) Use --private data storage (True) or --dir public storage (False)
 # android.private_storage = True
@@ -118,9 +118,9 @@ android.ndk = 25b
 # buildozer.
 android.accept_sdk_license = True
 
-# (str) Android architecture to build for
+# (str) Android architectures to build for
 # 仅 arm64-v8a（现代手机都是 64 位），减少一半编译时间
-android.arch = arm64-v8a
+android.archs = arm64-v8a
 
 # (str) Android entry point, default is 'org.kivy.android.PythonActivity'
 # android.entrypoint = org.robovm.apple.runtime.AppleRuntime
