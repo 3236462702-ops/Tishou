@@ -253,6 +253,10 @@ class TiShouUI:
             from kivy.uix.screenmanager import ScreenManager, SlideTransition
             from kivy.core.window import Window
 
+            # 存储引用供内部方法访问
+            self._ui_app_ref = None
+            self._sm_ref = None
+
             class TiShouApp(App):
                 """Kivy 主应用"""
 
@@ -262,9 +266,8 @@ class TiShouUI:
                         sm.transition = SlideTransition(
                             duration=0.35
                         )
-                        theme = get_theme_manager()
-                        bg = theme.page_bg()
-                        self._apply_bg(sm, bg)
+                        # ❌ 不在 ScreenManager 上设背景（各 Screen 自己负责背景，
+                        #    双重背景在 Android SDL2 后端可能导致渲染异常）
                         Window.bind(on_keyboard=self._on_keyboard)
 
                         # 添加 4 个页面
@@ -277,16 +280,28 @@ class TiShouUI:
                         # ✅ 从加载页开始，Kivy 渲染后再后台冷启动
                         sm.current = "loading"
                         self.sm = sm
+                        # 存储引用到外部
+                        self._outer()._sm_ref = sm
+                        self._outer()._ui_app_ref = self
                         return sm
                     except Exception as e:
                         self._log_error(f"构建 UI 失败: {e}")
                         from kivy.uix.label import Label
                         return Label(text=f"启动失败: {e}")
 
+                def _outer(self):
+                    """获取外层 TiShouUI 实例"""
+                    return self._outer_instance
+
                 def on_start(self):
                     """Kivy 渲染完成后调度后台冷启动"""
                     try:
                         from kivy.clock import Clock
+                        # 先让 LoadingScreen 启动自己的占位动画
+                        loading = self._get_loading_screen()
+                        if loading:
+                            loading.start_loading()
+                        # 0.5 秒后启动后台冷启动
                         Clock.schedule_once(lambda dt: self._begin_cold_start(), 0.5)
                     except Exception as e:
                         self._log_error(f"调度冷启动失败: {e}")
@@ -312,12 +327,11 @@ class TiShouUI:
                         from main import get_app as _get_app
                         biz_app = _get_app()
 
-                        from kivy.clock import mainthread
+                        from kivy.clock import Clock
 
                         def _progress_cb(stage, name, event, ok):
                             """冷启动阶段回调 → 更新 LoadingScreen"""
-                            @mainthread
-                            def _update():
+                            def _update(dt):
                                 try:
                                     loading = self._get_loading_screen()
                                     if loading:
@@ -328,22 +342,24 @@ class TiShouUI:
                                 except Exception:
                                     pass
                             try:
-                                _update()
+                                Clock.schedule_once(_update, 0)
                             except Exception:
                                 pass
 
                         biz_app.register_progress_callback("kivy_ui", _progress_cb)
 
                         # ---- 执行冷启动 ----
+                        self._log_info("后台冷启动开始...")
                         ok = biz_app.start()
+                        self._log_info(f"后台冷启动完成, ok={ok}")
 
                         # ---- 完成后切换页面 ----
-                        @mainthread
-                        def _after_cold_start():
+                        def _after_cold_start(dt):
                             try:
                                 loading = self._get_loading_screen()
                                 if loading:
                                     loading._update_progress(100, "准备就绪")
+                                    loading._cold_start_done = True
 
                                 # 判断跳转到免责页还是主设置页
                                 eula_accepted = biz_app._config.get("eula_accepted", False)
@@ -354,18 +370,35 @@ class TiShouUI:
 
                                 # ✅ 触发权限申请流程（异步）
                                 self._trigger_permission_flow()
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                self._log_error(f"冷启动后跳转异常: {e}")
 
                         import time
                         time.sleep(0.3)
                         try:
-                            _after_cold_start()
+                            Clock.schedule_once(_after_cold_start, 0)
                         except Exception:
                             pass
 
                     except Exception as e:
-                        self._log_error(f"冷启动异常: {e}")
+                        self._log_error(f"冷启动线程异常: {e}")
+                        import traceback
+                        self._log_error(traceback.format_exc())
+                        # 冷启动失败也跳转到主设置页（而非卡死在加载页）
+                        from kivy.clock import Clock
+                        def _fallback(dt):
+                            try:
+                                loading = self._get_loading_screen()
+                                if loading:
+                                    loading._update_progress(0, "启动异常，跳转设置")
+                                    loading._cold_start_done = True
+                                self.sm.current = "main"
+                            except Exception:
+                                pass
+                        try:
+                            Clock.schedule_once(_fallback, 0)
+                        except Exception:
+                            pass
 
                 def _trigger_permission_flow(self):
                     """触发分步权限申请流程"""
@@ -416,22 +449,6 @@ class TiShouUI:
                     except Exception:
                         return 0
 
-                def _apply_bg(self, widget, color_hex):
-                    try:
-                        with widget.canvas.before:
-                            from kivy.graphics import Color, Rectangle
-                            r, g, b, a = hex_to_rgba(color_hex)
-                            Color(r, g, b, a)
-                            Rectangle(size=Window.size, pos=widget.pos)
-                            widget.bind(pos=lambda w, v: setattr(
-                                widget.canvas.before.children[-1], "pos", v
-                            ))
-                            widget.bind(size=lambda w, v: setattr(
-                                widget.canvas.before.children[-1], "size", v
-                            ))
-                    except Exception:
-                        pass
-
                 def _on_keyboard(self, window, key, scancode, codepoint, modifier):
                     """全局拦截返回键"""
                     try:
@@ -458,6 +475,8 @@ class TiShouUI:
                     pass
 
             self._app = TiShouApp()
+            # 将外部实例注入内部类，避免闭包问题
+            self._app._outer_instance = self
             self._app.run()
 
         except ImportError as e:
@@ -839,14 +858,27 @@ class ActivationScreen(Screen):
 # ③ 加载进度页
 # ============================================================
 class LoadingScreen(Screen):
-    """加载进度页——圆角进度条+百分比，不可手动跳过"""
+    """
+    加载进度页——圆角进度条+百分比，不可手动跳过
+    =============================================
+    改进特性：
+      1. on_enter 自动启动占位动画（不依赖外部调用）
+      2. 15 秒无冷启动更新 → 显示超时提示但不阻塞
+      3. 后台 _cold_start_done 标记 + 兜底跳转
+    """
+
+    # 冷启动超时（秒）→ 显示提示但仍等待
+    COLD_START_TIMEOUT = 20
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._progress_bar = None
         self._percent_label = None
         self._status_label = None
+        self._title_label = None
         self._loading = False
+        self._cold_start_done = False
+        self._fallback_triggered = False
         self._build_ui()
 
     def _build_ui(self):
@@ -867,23 +899,23 @@ class LoadingScreen(Screen):
                 root.bind(pos=lambda w, v: setattr(rect, "pos", v))
                 root.bind(size=lambda w, v: setattr(rect, "size", v))
 
-            root.add_widget(BoxLayout())
+            root.add_widget(BoxLayout())  # 顶部弹性占位
 
             # 标题
-            title = Label(
-                text="正在初始化...",
+            self._title_label = Label(
+                text="TiShou 正在初始化",
                 font_size=dp_to_px(22),
                 bold=True,
                 color=hex_to_rgba(theme.text_primary()),
                 size_hint_y=None,
                 height=dp_to_px(50),
             )
-            root.add_widget(title)
+            root.add_widget(self._title_label)
 
             # 状态文字
             self._status_label = Label(
-                text="请稍候",
-                font_size=dp_to_px(14),
+                text="请稍候…",
+                font_size=dp_to_px(15),
                 color=hex_to_rgba(theme.text_secondary()),
                 size_hint_y=None,
                 height=dp_to_px(30),
@@ -917,75 +949,79 @@ class LoadingScreen(Screen):
             )
             root.add_widget(self._percent_label)
 
-            root.add_widget(BoxLayout())
+            root.add_widget(BoxLayout())  # 底部弹性占位
 
             self.add_widget(root)
         except Exception as e:
             self._log_error(f"加载页构建失败: {e}")
 
+    def on_enter(self):
+        """进入页面时自动启动加载动画"""
+        self.start_loading()
+
     def start_loading(self):
-        """开始加载（不可手动跳过）"""
+        """开始加载（含占位动画 + 冷启动超时兜底）"""
         if self._loading:
             return
         self._loading = True
-        threading.Thread(target=self._do_loading, daemon=True).start()
 
-    def _do_loading(self):
-        """执行加载流程"""
-        steps = [
-            (10, "检查环境..."),
-            (25, "加载配置..."),
-            (40, "初始化网络..."),
-            (55, "加载采集引擎..."),
-            (70, "初始化权限..."),
-            (85, "启动悬浮窗..."),
-            (100, "准备就绪"),
-        ]
+        # 启动占位动画线程（每 2 秒增加一些进度，直到冷启动接管）
+        threading.Thread(target=self._placeholder_anim, daemon=True).start()
+
+        # 启动超时兜底线程
+        threading.Thread(target=self._timeout_fallback, daemon=True).start()
+
+    def _placeholder_anim(self):
+        """
+        占位动画：冷启动接管前，让进度条缓慢前进
+        最大到 30%（避免与真实进度冲突）
+        """
+        import time
+        progress = 5
         try:
-            for pct, text in steps:
-                if not self._loading:
-                    return
-                import time
-                time.sleep(0.4 + (pct / 100) * 0.3)
-                self._update_progress(pct, text)
-
-            import time
-            time.sleep(0.3)
-            self._on_complete()
-        except Exception as e:
-            self._log_error(f"加载流程异常: {e}")
-            self._update_progress(0, f"加载异常: {e}")
-
-    def _update_progress(self, value, text=""):
-        """更新进度"""
-        try:
-            from kivy.clock import mainthread
-            @mainthread
-            def update():
-                try:
-                    if self._progress_bar:
-                        self._progress_bar.value = value
-                    if self._percent_label:
-                        self._percent_label.text = f"{int(value)}%"
-                    if self._status_label and text:
-                        self._status_label.text = text
-                except Exception:
-                    pass
-            update()
+            while self._loading and not self._cold_start_done and progress < 30:
+                self._update_progress(progress, "正在准备…")
+                progress += 3
+                time.sleep(1.5)
         except Exception:
             pass
 
-    def _on_complete(self):
-        """加载完成跳转主设置页"""
+    def _timeout_fallback(self):
+        """
+        冷启动超时兜底：
+        如果 COLD_START_TIMEOUT 秒后冷启动仍未完成，
+        显示提示但仍保持加载状态（不卡死）
+        """
+        import time
+        time.sleep(self.COLD_START_TIMEOUT)
         try:
-            from kivy.clock import mainthread
-            @mainthread
-            def switch():
-                try:
-                    self.manager.current = "main"
-                except Exception as e:
-                    self._log_error(f"跳转主设置页失败: {e}")
-            switch()
+            if not self._cold_start_done and not self._fallback_triggered:
+                self._fallback_triggered = True
+                self._update_progress(
+                    self._progress_bar.value if self._progress_bar else 50,
+                    "正在启动…请确保网络畅通"
+                )
+                self._log_error("冷启动超时，仍在等待")
+        except Exception:
+            pass
+
+    def _update_progress(self, value, text=""):
+        """更新进度（线程安全）"""
+        try:
+            from kivy.clock import Clock
+            Clock.schedule_once(lambda dt: self._do_update_progress(value, text), 0)
+        except Exception:
+            pass
+
+    def _do_update_progress(self, value, text=""):
+        """在主线程更新UI"""
+        try:
+            if self._progress_bar:
+                self._progress_bar.value = value
+            if self._percent_label:
+                self._percent_label.text = f"{int(value)}%"
+            if self._status_label and text:
+                self._status_label.text = text
         except Exception:
             pass
 

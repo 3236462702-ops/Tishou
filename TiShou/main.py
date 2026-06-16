@@ -459,10 +459,11 @@ class TiShouApp:
 
             # ---- 第6步：资源加载 ----
             self._stage = StartupStage.RESOURCE_LOAD
-            self._on_stage_start("OCR 模型与核心模块加载")
-            ocr_ok = self._load_ocr()
+            self._on_stage_start("核心模块加载与 OCR 模型初始化")
+            # ⚠️ 必须先加载模块（含 capture 模块），再初始化 OCR 引擎
             modules_ok = self._load_modules()
-            self._on_stage_end("OCR 模型与核心模块加载", ok=ocr_ok and modules_ok)
+            ocr_ok = self._load_ocr() if modules_ok else False
+            self._on_stage_end("核心模块加载与 OCR 模型初始化", ok=modules_ok)
 
             # ---- 第7步：素材更新检测 ----
             self._stage = StartupStage.MATERIAL_UPDATE
