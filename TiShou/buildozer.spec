@@ -190,7 +190,15 @@ android.release_log_level = 24
 # android.meta_data =
 
 # (str) Extra XML to add to AndroidManifest.xml (e.g., for accessibility service)
-# android.extra_manifest_xml = <service android:name=".AccessibilityService" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" android:exported="true"><intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter></service>
+# ═══════════════════════════════════════════════════════════════
+# 无障碍服务说明：
+#   Kivy 纯 Python 应用无法直接注册系统级无障碍服务（需 Java AccessibilityService 子类）
+#   实际采集方案：
+#   ① pyjnius 运行时调用 android.accessibilityservice API（代码层实现）
+#   ② 兜底：EasyOCR 截图识别（已实现）
+#   不需要在 AndroidManifest 中声明 <service>，因为 Python 侧无法提供 Java 类
+# ═══════════════════════════════════════════════════════════════
+# android.extra_manifest_xml =
 
 # (list) Android extra Java libs to add to the APK
 # android.extra_libs =

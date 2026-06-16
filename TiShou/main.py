@@ -1110,8 +1110,7 @@ def main():
     =========
     1. 确保目录结构
     2. 创建应用实例
-    3. 执行冷启动（不阻塞 UI）
-    4. 启动 Kivy 界面
+    3. 启动 Kivy 界面（内部自动调度冷启动，防止安卓主线程阻塞黑屏）
     """
     try:
         # 确保必要目录
@@ -1121,13 +1120,8 @@ def main():
         # 获取应用实例
         app = get_app()
 
-        # 执行冷启动
-        startup_ok = app.start()
-        if not startup_ok:
-            logger = LogManager.get_logger("app")
-            logger.error("冷启动流程未完全成功，将尝试继续运行")
-
-        # 启动 UI
+        # ✅ 立即启动 Kivy UI，不执行阻塞冷启动
+        # Kivy 的 LoadingScreen 会在 on_start 中调度后台冷启动
         app.launch_ui()
 
     except KeyboardInterrupt:

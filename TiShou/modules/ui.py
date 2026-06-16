@@ -273,13 +273,148 @@ class TiShouUI:
                         sm.add_widget(ActivationScreen(name="activation"))
                         sm.add_widget(LoadingScreen(name="loading"))
                         sm.add_widget(MainSettingsScreen(name="main"))
-                        sm.current = "disclaimer"
+
+                        # ✅ 从加载页开始，Kivy 渲染后再后台冷启动
+                        sm.current = "loading"
                         self.sm = sm
                         return sm
                     except Exception as e:
                         self._log_error(f"构建 UI 失败: {e}")
                         from kivy.uix.label import Label
                         return Label(text=f"启动失败: {e}")
+
+                def on_start(self):
+                    """Kivy 渲染完成后调度后台冷启动"""
+                    try:
+                        from kivy.clock import Clock
+                        Clock.schedule_once(lambda dt: self._begin_cold_start(), 0.5)
+                    except Exception as e:
+                        self._log_error(f"调度冷启动失败: {e}")
+
+                def _begin_cold_start(self):
+                    """在后台线程执行完整冷启动"""
+                    import threading
+                    t = threading.Thread(target=self._cold_start_runner, daemon=True)
+                    t.start()
+
+                def _cold_start_runner(self):
+                    """
+                    后台冷启动线程：
+                    1. 注册进度回调到 TiShouApp（业务逻辑）
+                    2. 调用 biz_app.start()
+                    3. 完成后切换到对应页面
+                    4. 触发权限申请流程
+                    """
+                    try:
+                        # ---- 懒加载业务 App（避免循环导入） ----
+                        import sys as _sys
+                        _sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+                        from main import get_app as _get_app
+                        biz_app = _get_app()
+
+                        from kivy.clock import mainthread
+
+                        def _progress_cb(stage, name, event, ok):
+                            """冷启动阶段回调 → 更新 LoadingScreen"""
+                            @mainthread
+                            def _update():
+                                try:
+                                    loading = self._get_loading_screen()
+                                    if loading:
+                                        loading._update_progress(
+                                            self._calc_stage_progress(stage),
+                                            name
+                                        )
+                                except Exception:
+                                    pass
+                            try:
+                                _update()
+                            except Exception:
+                                pass
+
+                        biz_app.register_progress_callback("kivy_ui", _progress_cb)
+
+                        # ---- 执行冷启动 ----
+                        ok = biz_app.start()
+
+                        # ---- 完成后切换页面 ----
+                        @mainthread
+                        def _after_cold_start():
+                            try:
+                                loading = self._get_loading_screen()
+                                if loading:
+                                    loading._update_progress(100, "准备就绪")
+
+                                # 判断跳转到免责页还是主设置页
+                                eula_accepted = biz_app._config.get("eula_accepted", False)
+                                if eula_accepted:
+                                    self.sm.current = "main"
+                                else:
+                                    self.sm.current = "disclaimer"
+
+                                # ✅ 触发权限申请流程（异步）
+                                self._trigger_permission_flow()
+                            except Exception:
+                                pass
+
+                        import time
+                        time.sleep(0.3)
+                        try:
+                            _after_cold_start()
+                        except Exception:
+                            pass
+
+                    except Exception as e:
+                        self._log_error(f"冷启动异常: {e}")
+
+                def _trigger_permission_flow(self):
+                    """触发分步权限申请流程"""
+                    try:
+                        # 懒加载权限模块
+                        from modules.permission import start_permission_flow
+                        # 权限申请在后台线程执行，不阻塞 UI
+                        import threading
+                        t = threading.Thread(
+                            target=start_permission_flow,
+                            daemon=True
+                        )
+                        t.start()
+                        self._log_info("权限申请流程已触发")
+                    except Exception as e:
+                        self._log_error(f"触发权限申请失败: {e}")
+
+                def _log_info(self, msg):
+                    try:
+                        LogManager.get_logger("app").info(msg)
+                    except Exception:
+                        pass
+
+                def _get_loading_screen(self):
+                    """获取 LoadingScreen 实例"""
+                    try:
+                        if hasattr(self, "sm"):
+                            return self.sm.get_screen("loading")
+                    except Exception:
+                        pass
+                    return None
+
+                def _calc_stage_progress(self, stage):
+                    """根据启动阶段计算进度百分比"""
+                    stages_map = {
+                        "init": 5,
+                        "network_check": 15,
+                        "permission_check": 25,
+                        "disclaimer": 35,
+                        "activation": 45,
+                        "resource_load": 60,
+                        "material_update": 80,
+                        "services_start": 90,
+                        "completed": 100,
+                    }
+                    try:
+                        return stages_map.get(stage, 0)
+                    except Exception:
+                        return 0
 
                 def _apply_bg(self, widget, color_hex):
                     try:
