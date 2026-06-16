@@ -54,6 +54,24 @@ jobs:
             libncurses5-dev libncursesw5-dev libtinfo5 cmake \
             libffi-dev libssl-dev libltdl-dev gettext
 
+      # ---- 3b. 设置 Java 17（Gradle 8.14+ 需要 Java 17，默认的 Java 11 不兼容） ----
+      - name: Set Java 17 as default
+        run: |
+          # Ubuntu 22.04 上 openjdk-17-jdk 的默认安装路径
+          JAVA17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+          if [ ! -d "$JAVA17_HOME" ]; then
+            # fallback: 搜索任何 JDK 17
+            JAVA17_HOME=$(ls -d /usr/lib/jvm/*17* 2>/dev/null | head -1)
+          fi
+          if [ -n "$JAVA17_HOME" ] && [ -x "$JAVA17_HOME/bin/java" ]; then
+            echo "JAVA_HOME=$JAVA17_HOME" >> $GITHUB_ENV
+            echo "$JAVA17_HOME/bin" >> $GITHUB_PATH
+            echo "Using Java: $($JAVA17_HOME/bin/java -version 2>&1 | head -1)"
+          else
+            echo "WARNING: Java 17 not found, falling back to default"
+            java -version
+          fi
+
       # ---- 4. 安装 buildozer（用 Python 3.11 的 pip） ----
       - name: Install buildozer
         run: |
