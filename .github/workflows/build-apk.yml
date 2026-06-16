@@ -65,7 +65,12 @@ jobs:
         run: buildozer --version
         working-directory: TiShou
 
-      # ---- 6. 运行 buildozer 构建 debug APK ----
+      # ---- 6. 清理旧的构建缓存（避免上一次失败的 Python 3.14 缓存污染） ----
+      - name: Clean build cache
+        run: buildozer android distclean 2>&1 || true
+        working-directory: TiShou
+
+      # ---- 7. 运行 buildozer 构建 debug APK ----
       - name: Build APK with buildozer
         run: buildozer android debug 2>&1
         working-directory: TiShou
@@ -73,7 +78,7 @@ jobs:
           # 自动接受 SDK 许可证（buildozer.spec 已设 accept_sdk_license = True）
           BUILDOZER_NO_TERMINAL: 1
 
-      # ---- 7. 上传 APK 产物 ----
+      # ---- 8. 上传 APK 产物 ----
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
