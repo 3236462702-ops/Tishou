@@ -53,7 +53,7 @@ version = 1.0.0
 
 # (list) Application requirements
 # 兼容 pip 的包（可从 PyPI 安装）+ 三个安卓专属库（由 p4a 源码编译）
-requirements = python3==3.11.9,Kivy,pyjnius,requests,easyocr,Pillow,pygame,numpy,schedule,accessible-android,android-permissions,android-apps
+requirements = python3==3.11.9,Kivy,pyjnius,requests,easyocr,Pillow,pygame,numpy,schedule,android
 
 # (str) Custom source folders for requirements
 # requirements.source.pyyaml = ext_libs/pyyaml
