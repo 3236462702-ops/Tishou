@@ -38,7 +38,13 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # ---- 2. 安装系统依赖（buildozer + python-for-android 所需） ----
+      # ---- 2. 安装 Python 3.11（p4a 要求宿主与目标 Python 版本一致） ----
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # ---- 3. 安装系统依赖（buildozer + python-for-android 所需） ----
       - name: Install system dependencies
         run: |
           sudo apt update -qq
@@ -48,18 +54,18 @@ jobs:
             libncurses5-dev libncursesw5-dev libtinfo5 cmake \
             libffi-dev libssl-dev libltdl-dev gettext
 
-      # ---- 3. 安装 buildozer ----
+      # ---- 4. 安装 buildozer（用 Python 3.11 的 pip） ----
       - name: Install buildozer
         run: |
-          pip3 install --user --upgrade buildozer cython
+          python -m pip install --user --upgrade buildozer cython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # ---- 4. 验证 buildozer ----
+      # ---- 5. 验证 buildozer ----
       - name: Verify buildozer
         run: buildozer --version
         working-directory: TiShou
 
-      # ---- 5. 运行 buildozer 构建 debug APK ----
+      # ---- 6. 运行 buildozer 构建 debug APK ----
       - name: Build APK with buildozer
         run: buildozer android debug 2>&1
         working-directory: TiShou
@@ -67,7 +73,7 @@ jobs:
           # 自动接受 SDK 许可证（buildozer.spec 已设 accept_sdk_license = True）
           BUILDOZER_NO_TERMINAL: 1
 
-      # ---- 6. 上传 APK 产物 ----
+      # ---- 7. 上传 APK 产物 ----
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
