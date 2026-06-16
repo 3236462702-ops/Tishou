@@ -672,11 +672,48 @@ class PermissionManager:
         通过安卓 API 检查权限
         非安卓环境或库缺失时返回 GRANTED 模拟
 
+        特殊处理：
+          - float_window（SYSTEM_ALERT_WINDOW）：使用 Settings.canDrawOverlays()
+          - 普通权限：使用 android.permissions 或 Context.checkSelfPermission()
+
         :param perm_key: 权限键名
         :return: PermissionState
         """
         try:
-            # 使用 python-for-android 内置模块 android.permissions
+            # ---- 特殊权限：悬浮窗（SYSTEM_ALERT_WINDOW） ----
+            if perm_key == "float_window":
+                try:
+                    from jnius import autoclass
+                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
+                    Settings = autoclass("android.provider.Settings")
+
+                    activity = PythonActivity.mActivity
+                    if not activity:
+                        return PermissionState.UNKNOWN
+
+                    # Settings.canDrawOverlays() 是 API 23+ 唯一正确判断方式
+                    # checkSelfPermission() 对 SYSTEM_ALERT_WINDOW 无效
+                    can_draw = Settings.canDrawOverlays(activity)
+                    return PermissionState.GRANTED if can_draw else PermissionState.DENIED
+                except Exception as e:
+                    self._logger.warning(f"悬浮窗权限检查异常: {e}")
+                    # 回退：传统方式（API < 23 有效）
+                    try:
+                        from jnius import autoclass
+                        PythonActivity = autoclass("org.kivy.android.PythonActivity")
+                        PackageManager = autoclass("android.content.pm.PackageManager")
+                        activity = PythonActivity.mActivity
+                        if activity:
+                            result = activity.checkSelfPermission(
+                                "android.permission.SYSTEM_ALERT_WINDOW"
+                            )
+                            if result == PackageManager.PERMISSION_GRANTED:
+                                return PermissionState.GRANTED
+                    except Exception:
+                        pass
+                    return PermissionState.DENIED
+
+            # ---- 普通权限 ----
             try:
                 from android.permissions import check_permission
                 android_perm = self._get_android_perm_name(perm_key)
@@ -835,6 +872,10 @@ class PermissionManager:
 
         :param perm_key: 权限键名
         :return: True=申请成功, False=申请失败或用户拒绝
+
+        注意：
+          普通权限 → request_permissions() 弹窗申请
+          特殊权限（float_window / SYSTEM_ALERT_WINDOW）→ Intent 跳转系统设置页
         """
         try:
             if not is_android():
@@ -846,10 +887,59 @@ class PermissionManager:
             if not android_perm:
                 return True
 
-            # ---- 使用 python-for-android 内置 android.permissions ----
+            # ============================================================
+            # 特殊权限：悬浮窗（SYSTEM_ALERT_WINDOW）
+            # 不能用普通权限 API 申请，需 Intent 跳转系统设置页手动开启
+            # ============================================================
+            if perm_key == "float_window":
+                try:
+                    from jnius import autoclass
+                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
+                    Intent = autoclass("android.content.Intent")
+                    Uri = autoclass("android.net.Uri")
+
+                    activity = PythonActivity.mActivity
+                    if not activity:
+                        self._logger.warning("无法获取 Activity 实例，无法跳转悬浮窗设置")
+                        return False
+
+                    # 构建 Intent：跳转到悬浮窗管理页（API 23+）
+                    # action: android.settings.action.MANAGE_OVERLAY_PERMISSION
+                    # data: package:<package_name>
+                    intent = Intent(
+                        "android.settings.action.MANAGE_OVERLAY_PERMISSION",
+                        Uri.parse("package:" + activity.getPackageName())
+                    )
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    activity.startActivity(intent)
+                    self._logger.info("已跳转悬浮窗权限设置页，请在系统中手动开启")
+                    return True
+                except Exception as e:
+                    self._logger.error(f"跳转悬浮窗设置页失败: {e}")
+                    # 兜底：尝试用通用应用设置页
+                    try:
+                        from jnius import autoclass
+                        PythonActivity = autoclass("org.kivy.android.PythonActivity")
+                        Intent = autoclass("android.content.Intent")
+
+                        activity = PythonActivity.mActivity
+                        if activity:
+                            intent = Intent("android.settings.APPLICATION_DETAILS_SETTINGS")
+                            Uri = autoclass("android.net.Uri")
+                            intent.setData(Uri.parse("package:" + activity.getPackageName()))
+                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            activity.startActivity(intent)
+                            self._logger.info("已跳转应用设置页，请手动开启悬浮窗权限")
+                            return True
+                    except Exception:
+                        pass
+                    return False
+
+            # ============================================================
+            # 普通权限：使用 android.permissions.request_permissions()
+            # ============================================================
             try:
                 from android.permissions import request_permissions, Permission
-                # request_permissions 是异步的，会显示系统弹窗
                 request_permissions([Permission(android_perm)])
                 self._logger.info(f"权限申请已发送: {perm_key}")
                 return True

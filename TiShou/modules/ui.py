@@ -224,17 +224,18 @@ class TiShouUI:
     # Kivy 配置
     # ----------------------------------------------------------
     def _configure_kivy(self):
-        """Kivy 环境预配置"""
+        """Kivy 环境预配置（Android 适配版）"""
         try:
             os.environ.setdefault("KIVY_NO_CONSOLELOG", "1")
             os.environ.setdefault("KIVY_ORIENTATION", "Portrait")
-            os.environ.setdefault("KIVY_METRICS_DENSITY", "1")
+            # ❌ 不设置 KIVY_METRICS_DENSITY，让 Kivy 自动检测屏幕密度
 
             from kivy.config import Config
             Config.set("kivy", "log_level", "warning")
-            Config.set("graphics", "fullscreen", "auto")
+            # Android 上 fullscreen=auto 由 buildozer.spec 的 fullscreen=0 控制
+            # 不在代码中额外设置，避免冲突
             Config.set("graphics", "resizable", False)
-            Config.set("graphics", "borderless", "1")
+            # ❌ 不要设置 borderless=1（在 Android SDL2 后端会导致渲染异常黑屏）
             Config.set("input", "mouse", "mouse,disable_multitouch")
         except Exception as e:
             self._logger.warning(f"Kivy 配置异常: {e}")
