@@ -49,8 +49,8 @@ easyocr>=1.7.0
 # ---- 安卓桥接（必需：悬浮窗/通知/保活） ----
 pyjnius>=1.6.0
 
-# ---- 音效播放（pygame.mixer / Android MediaPlayer） ----
-pygame>=2.5.0
+# ---- 音效播放（Android AudioTrack / Windows winsound，无需外部库） ----
+# pygame 已被移除（交叉编译 longintrepr.h 问题，改用 pyjnius AudioTrack）
 
 # ---- 数值运算（音效波形生成） ----
 numpy>=1.24.0

@@ -265,38 +265,55 @@ class DpConverter:
 
 
 # ============================================================
-# 音效管理器（pygame.mixer）
+# 音效管理器（双后端：Android AudioTrack / Windows winsound）
 # ============================================================
 
 class SoundManager:
     """
-    音效管理器
-    =========
-    使用 pygame.mixer 播放轻量音效。
-    遵守素材规则：仅使用 Python 内置/开源库素材，不下载第三方资源包。
+    音效管理器 — 双后端
+    ===================
+    Android：pyjnius → android.media.AudioTrack（无需编译，零依赖）
+    Windows：winsound.Beep
 
-    当 pygame.mixer 初始化失败时静默降级，不阻断主流程。
+    遵守素材规则：
+      使用 Python 内置库生成正弦波 PCM 数据，不下载第三方资源包。
+
+    静默降级：
+      全部后端不可用时，不阻断主流程，只输出日志。
     """
 
     def __init__(self):
         self._logger = LogManager.get_logger("app")
-        self._initialized = False
-        self._sounds = {}
         self._enabled = True
         self._volume = 0.5
-        self._init_pygame()
+        self._loaded = False
+        self._backend = None  # 'android' / 'winsound' / None
+        self._init_backend()
 
-    def _init_pygame(self):
-        """初始化 pygame.mixer"""
+    def _init_backend(self):
+        """初始化音效后端（Android AudioTrack 优先 → winsound 兜底）"""
+        # ---- 1. Android AudioTrack（pyjnius 桥接，零 C 编译） ----
+        if is_android():
+            try:
+                from jnius import autoclass
+                self._AudioTrack = autoclass('android.media.AudioTrack')
+                self._AudioFormat = autoclass('android.media.AudioFormat')
+                self._loaded = True
+                self._backend = 'android'
+                self._logger.info("音效系统初始化成功（Android AudioTrack）")
+                return
+            except Exception as e:
+                self._logger.warning(f"Android AudioTrack 初始化失败: {e}")
+
+        # ---- 2. winsound（桌面 Windows 备用） ----
         try:
-            import pygame
-            # 使用较小的缓冲区降低延迟
-            pygame.mixer.init(frequency=22050, size=-16, channels=1, buffer=512)
+            import winsound
+            self._winsound = winsound
             self._loaded = True
-            self._logger.info("音效系统初始化成功")
+            self._backend = 'winsound'
+            self._logger.info("音效系统初始化成功（winsound）")
         except Exception as e:
-            self._logger.warning(f"音效系统初始化失败（不影响主流程）: {e}")
-            self._loaded = False
+            self._logger.warning(f"音效系统初始化失败（全部后端不可用，静默降级）: {e}")
 
     def set_enabled(self, enabled: bool):
         self._enabled = enabled
@@ -306,93 +323,119 @@ class SoundManager:
 
     @ExceptionUtil.safe_call(default_return=False)
     def play_order_success(self):
-        """播放抢单成功音效"""
+        """播放抢单成功音效（880Hz × 150ms）"""
         if not self._enabled or not self._loaded:
             return False
-        try:
-            import pygame
-            # 生成短促的成功提示音（正弦波）
-            self._play_simple_tone(880, 0.15)  # 880Hz × 150ms
-            return True
-        except Exception:
-            return False
+        self._play_tone(880, 0.15)
+        return True
 
     @ExceptionUtil.safe_call(default_return=False)
     def play_order_failed(self):
-        """播放抢单失败音效"""
+        """播放抢单失败音效（330Hz × 150ms）"""
         if not self._enabled or not self._loaded:
             return False
-        try:
-            import pygame
-            # 生成低沉的失败提示音
-            self._play_simple_tone(330, 0.15)  # 330Hz × 150ms
-            return True
-        except Exception:
-            return False
+        self._play_tone(330, 0.15)
+        return True
 
     @ExceptionUtil.safe_call(default_return=False)
     def play_listening(self):
-        """播放监听提示音（轻触声）"""
+        """播放监听提示音（660Hz × 80ms）"""
         if not self._enabled or not self._loaded:
             return False
-        try:
-            import pygame
-            self._play_simple_tone(660, 0.08)  # 660Hz × 80ms
-            return True
-        except Exception:
-            return False
+        self._play_tone(660, 0.08)
+        return True
 
-    def _play_simple_tone(self, freq: float, duration: float):
-        """
-        生成纯音并播放
-        使用 numpy（如果可用）或纯 Python 生成波形
-        """
-        try:
-            import pygame
-            sample_rate = 22050
-            n_samples = int(sample_rate * duration)
+    def _play_tone(self, freq: float, duration: float):
+        """路由到对应后端播放纯音"""
+        if self._backend == 'android':
+            self._play_tone_android(freq, duration)
+        elif self._backend == 'winsound':
+            self._play_tone_winsound(freq, duration)
 
-            # 尝试用 numpy 生成波形（更高效）
+    def _play_tone_android(self, freq: float, duration: float):
+        """
+        Android AudioTrack 播放正弦波纯音
+        ==================================
+        生成 PCM16 单声道数据 → AudioTrack 写出 → 硬件播放。
+        numpy 可用时用 numpy 生成，否则纯 Python 生成。
+        """
+        sample_rate = 22050
+        n_samples = int(sample_rate * duration)
+
+        # ---- 生成 PCM 采样数据（numpy 优先） ----
+        try:
+            import numpy as np
+            t = np.linspace(0, duration, n_samples, endpoint=False)
+            wave = np.sin(2 * np.pi * freq * t) * 0.3
+            # 淡入淡出（防爆音）
+            fade_len = int(n_samples * 0.1)
+            wave[:fade_len] *= np.linspace(0, 1, fade_len)
+            wave[-fade_len:] *= np.linspace(1, 0, fade_len)
+            # 转为 PCM16 bytes
+            pcm_data = (wave * 32767).astype(np.int16).tobytes()
+        except ImportError:
+            # 纯 Python 生成（无 numpy 依赖）
+            import struct
+            samples = []
+            fade_len = int(n_samples * 0.1)
+            for i in range(n_samples):
+                t = i / sample_rate
+                val = int(math.sin(2 * math.pi * freq * t) * 0.3 * 32767)
+                # 淡入淡出
+                fade = 1.0
+                if i < fade_len:
+                    fade = i / fade_len
+                elif i > n_samples - fade_len:
+                    fade = (n_samples - i) / fade_len
+                samples.append(int(val * fade))
+            pcm_data = struct.pack('<' + 'h' * len(samples), *samples)
+
+        # ---- 通过 AudioTrack 播放 ----
+        try:
+            # AudioFormat 常量（带 fallback 整数值）
             try:
-                import numpy as np
-                t = np.linspace(0, duration, n_samples, endpoint=False)
-                wave = np.sin(2 * np.pi * freq * t) * 0.3
-                # 淡入淡出防爆音
-                fade_len = int(n_samples * 0.1)
-                wave[:fade_len] *= np.linspace(0, 1, fade_len)
-                wave[-fade_len:] *= np.linspace(1, 0, fade_len)
-                samples = (wave * 32767).astype(np.int16)
-            except ImportError:
-                # 纯 Python 生成
-                samples = []
-                for i in range(n_samples):
-                    t = i / sample_rate
-                    val = int(math.sin(2 * math.pi * freq * t) * 0.3 * 32767)
-                    # 淡入淡出
-                    fade = 1.0
-                    if i < n_samples * 0.1:
-                        fade = i / (n_samples * 0.1)
-                    elif i > n_samples * 0.9:
-                        fade = (n_samples - i) / (n_samples * 0.1)
-                    samples.append(int(val * fade))
+                CHANNEL_OUT_MONO = self._AudioFormat.CHANNEL_OUT_MONO
+            except Exception:
+                CHANNEL_OUT_MONO = 4  # AudioFormat.CHANNEL_OUT_MONO
+            try:
+                ENCODING_PCM_16BIT = self._AudioFormat.ENCODING_PCM_16BIT
+            except Exception:
+                ENCODING_PCM_16BIT = 2  # AudioFormat.ENCODING_PCM_16BIT
+            try:
+                MODE_STATIC = self._AudioTrack.MODE_STATIC
+            except Exception:
+                MODE_STATIC = 1  # AudioTrack.MODE_STATIC
 
-            sound = pygame.sndarray.make_sound(samples)
-            sound.set_volume(self._volume)
-            sound.play()
-
+            # 计算最小缓冲区
+            min_size = self._AudioTrack.getMinBufferSize(
+                sample_rate, CHANNEL_OUT_MONO, ENCODING_PCM_16BIT,
+            )
+            # 创建 AudioTrack 实例（STREAM_NOTIFICATION = 5）
+            track = self._AudioTrack(
+                5, sample_rate, CHANNEL_OUT_MONO,
+                ENCODING_PCM_16BIT,
+                max(min_size, len(pcm_data)),
+                MODE_STATIC,
+            )
+            # 写入 PCM 数据并播放
+            track.write(pcm_data, 0, len(pcm_data))
+            track.setVolume(self._volume)
+            track.play()
         except Exception:
             # 最终降级：什么都不做
             pass
 
-    def cleanup(self):
-        """释放音效资源"""
+    def _play_tone_winsound(self, freq: float, duration: float):
+        """Windows winsound.Beep 播放纯音"""
         try:
-            if self._loaded:
-                import pygame
-                pygame.mixer.quit()
-            self._loaded = False
+            self._winsound.Beep(int(freq), int(duration * 1000))
         except Exception:
             pass
+
+    def cleanup(self):
+        """释放音效资源"""
+        self._loaded = False
+        self._backend = None
 
 
 # ============================================================

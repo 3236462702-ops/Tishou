@@ -42,7 +42,14 @@ TiShou — 主入口（完整冷启动流程）
    # 发布包（release，需签名）：
    buildozer android release
 
-三、三个安卓专属库的处理：
+   # 清理缓存（重要！Python 版本变更后必须先清理）：
+   buildozer android distclean
+
+三、⚠️ 重要：p4a 的 python3 配方默认编译 Python 3.14.2，导致 pygame（2.1.0）
+   的 longintrepr.h 找不到。解决方案：彻底移除 pygame（已替换为 pyjnius →
+   android.media.AudioTrack），requirements 中不写 pygame。
+
+四、三个安卓专属库的处理：
    accessible-android  —— import 名：android_accessibility（capture.py）
    android-permissions  —— import 名：android.permissions（permission.py）
    android-apps        —— import 名：android_apps
@@ -53,21 +60,15 @@ TiShou — 主入口（完整冷启动流程）
    - Windows 环境/打包前测试运行时，这三个库不可用，代码静默降级
    - 安卓 APK 运行时，buildozer 编译的 .so 中自带这些模块
 
-四、关键 buildozer.spec 参数：
-   requirements = python3,Kivy==2.3.0,pyjnius,requests,easyocr,pillow,
-                 pygame,numpy,schedule,
-                 accessible-android,android-permissions,android-apps
+五、关键 buildozer.spec 参数：
+   requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
 
-   android.permissions = BIND_ACCESSIBILITY_SERVICE,
-                         INTERNET,ACCESS_NETWORK_STATE,
-                         READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,
-                         ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION,
-                         SYSTEM_ALERT_WINDOW,FOREGROUND_SERVICE,
-                         POST_NOTIFICATIONS,
-                         REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                         MEDIA_PROJECTION
+   ⚠️ 注意：
+   - 不要写 pygame（它依赖 longintrepr.h，Python 3.12+ 已移除）
+   - 不要写 android（p4a 自动包含，写进去会被 pip 当作 PyPI 包去搜）
+   - 不要锁定版本号（p4a 配方有自己的版本管理，锁定会导致找不到包）
 
-五、注意事项：
+六、注意事项：
    - easyocr 模型文件较大（~100MB），需在首次启动时联网下载
    - 或在 buildozer.spec 中通过 extra_source_dirs 或 android.extra_libs 打包进 APK
    - 建议在 buildozer.spec 中设置 android.accept_sdk_license = True

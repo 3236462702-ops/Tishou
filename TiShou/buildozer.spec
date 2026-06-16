@@ -52,7 +52,7 @@ version = 1.0.0
 # version.filename = %(source.dir)s/main.py
 
 # (list) Application requirements
-requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,pygame,numpy,schedule,android
+requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
 
 # (str) Custom source folders for requirements
 # requirements.source.pyyaml = ext_libs/pyyaml
