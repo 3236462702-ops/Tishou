@@ -1,33 +1,22 @@
-# -*- coding: utf-8 -*-
-"""
-=============================================================================
-TiShou — Buildozer 打包配置文件
-=============================================================================
-打包目标：Android APK（仅适配安卓真机）
-项目框架：Kivy 2.3.0+ / Python 3.11+
-打包工具：buildozer（基于 python-for-android）
-
-使用说明：
-  # 首次打包（自动下载 SDK/NDK/Ant，约30-60分钟）：
-  buildozer android debug
-
-  # 调试包 + 安装 + 运行：
-  buildozer android debug deploy run
-
-  # 清理构建缓存：
-  buildozer android distclean
-
-  # 发布包（需配置 release.keystore）：
-  buildozer android release
-
-注意事项：
-  1. 三个安卓专属库（accessible-android, android-permissions, android-apps）
-     由 python-for-android 从源码编译加入 APK，不是 pip 包。
-  2. easyocr 模型文件（~100MB）默认首次启动联网下载。
-     如需离线打包，可将模型文件放入项目目录并在 source.include_exts 中添加。
-  3. APK 最低支持 API 26（Android 8.0）。
-=============================================================================
-"""
+# =============================================================================
+# TiShou — Buildozer 打包配置文件
+# =============================================================================
+# 打包目标：Android APK（仅适配安卓真机）
+# 项目框架：Kivy 2.3.0+ / Python 3.11+
+# 打包工具：buildozer（基于 python-for-android）
+#
+# 使用说明：
+#   首次打包：buildozer android debug
+#   调试+安装+运行：buildozer android debug deploy run
+#   清理缓存：buildozer android distclean
+#   发布包（需keystore）：buildozer android release
+#
+# 注意事项：
+#   1. 三个安卓专属库（accessible-android, android-permissions, android-apps）
+#      由 python-for-android 从源码编译加入 APK，不是 pip 包
+#   2. easyocr 模型文件（~100MB）默认首次启动联网下载
+#   3. APK 最低支持 API 26（Android 8.0），目标 API 33
+# =============================================================================
 
 [app]
 
