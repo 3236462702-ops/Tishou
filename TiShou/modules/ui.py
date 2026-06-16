@@ -362,16 +362,31 @@ class TiShouUI:
                                     loading._cold_start_done = True
 
                                 # 判断跳转到免责页还是主设置页
-                                eula_accepted = biz_app._config.get("eula_accepted", False)
-                                if eula_accepted:
-                                    self.sm.current = "main"
-                                else:
-                                    self.sm.current = "disclaimer"
+                                try:
+                                    eula_accepted = biz_app.config.get("eula_accepted", False)
+                                except Exception:
+                                    eula_accepted = False
 
-                                # ✅ 触发权限申请流程（异步）
-                                self._trigger_permission_flow()
-                            except Exception as e:
-                                self._log_error(f"冷启动后跳转异常: {e}")
+                                if eula_accepted:
+                                    target = "main"
+                                else:
+                                    target = "disclaimer"
+
+                                self._log_info(f"冷启动完成，跳转到 {target}")
+                                self.sm.current = target
+
+                                # 触发权限申请流程（延迟 1 秒避免与页面切换冲突）
+                                from kivy.clock import Clock as _Clock
+                                _Clock.schedule_once(
+                                    lambda dt2: self._trigger_permission_flow(), 1.0
+                                )
+                            except Exception as exc:
+                                self._log_error(f"冷启动后跳转异常: {exc}")
+                                # 兜底：直接跳转到主设置页
+                                try:
+                                    self.sm.current = "main"
+                                except Exception:
+                                    pass
 
                         import time
                         time.sleep(0.3)
@@ -380,37 +395,46 @@ class TiShouUI:
                         except Exception:
                             pass
 
-                    except Exception as e:
-                        self._log_error(f"冷启动线程异常: {e}")
+                    except Exception as exc:
+                        self._log_error(f"冷启动线程异常: {exc}")
                         import traceback
                         self._log_error(traceback.format_exc())
                         # 冷启动失败也跳转到主设置页（而非卡死在加载页）
-                        from kivy.clock import Clock
+                        from kivy.clock import Clock as _Clock2
                         def _fallback(dt):
                             try:
                                 loading = self._get_loading_screen()
                                 if loading:
-                                    loading._update_progress(0, "启动异常，跳转设置")
+                                    loading._update_progress(0, f"启动异常: {exc}")
                                     loading._cold_start_done = True
-                                self.sm.current = "main"
+                                # 尝试跳转到设置页
+                                try:
+                                    self.sm.current = "main"
+                                    # 即使冷启动失败也尝试触发权限申请
+                                    from kivy.clock import Clock as _Clock3
+                                    _Clock3.schedule_once(
+                                        lambda dt2: self._trigger_permission_flow(), 1.5
+                                    )
+                                except Exception:
+                                    pass
                             except Exception:
                                 pass
                         try:
-                            Clock.schedule_once(_fallback, 0)
+                            _Clock2.schedule_once(_fallback, 0.5)
                         except Exception:
                             pass
 
                 def _trigger_permission_flow(self):
-                    """触发分步权限申请流程"""
+                    """触发分步权限申请流程（异步，不阻塞 UI）"""
                     try:
-                        # 懒加载权限模块
-                        from modules.permission import start_permission_flow
-                        # 权限申请在后台线程执行，不阻塞 UI
                         import threading
-                        t = threading.Thread(
-                            target=start_permission_flow,
-                            daemon=True
-                        )
+                        def _run_perm_flow():
+                            try:
+                                from modules.permission import start_permission_flow
+                                start_permission_flow()
+                            except Exception as exc:
+                                self._log_error(f"权限申请流程异常: {exc}")
+                        t = threading.Thread(target=_run_perm_flow, daemon=True)
                         t.start()
                         self._log_info("权限申请流程已触发")
                     except Exception as e:
@@ -669,6 +693,14 @@ class DisclaimerScreen(Screen):
     def _on_accept(self, instance):
         """同意进入卡密验证"""
         try:
+            # 保存 EULA 同意状态，下次启动跳过免责页
+            try:
+                from main import get_app as _get_app
+                biz_app = _get_app()
+                biz_app.config.set("eula_accepted", True)
+                biz_app.config.save()
+            except Exception:
+                pass
             self.manager.current = "activation"
         except Exception as e:
             self._log_error(f"页面跳转异常: {e}")
@@ -821,7 +853,7 @@ class ActivationScreen(Screen):
             self._set_status("验证异常，请稍后重试", StyleConstants.DANGER_COLOR)
 
     def _go_loading(self):
-        """延迟跳转加载页"""
+        """验证成功后直接进入主设置页（冷启动已在后台完成）"""
         try:
             import time
             time.sleep(0.5)
@@ -829,12 +861,9 @@ class ActivationScreen(Screen):
             @mainthread
             def switch():
                 try:
-                    self.manager.current = "loading"
-                    loading = self.manager.get_screen("loading")
-                    if hasattr(loading, "start_loading"):
-                        loading.start_loading()
+                    self.manager.current = "main"
                 except Exception as e:
-                    self._log_error(f"跳转加载页失败: {e}")
+                    self._log_error(f"跳转主设置页失败: {e}")
             switch()
         except Exception:
             pass
@@ -1085,7 +1114,53 @@ class MainSettingsScreen(Screen):
         self._dev_tap_count = 0          # 标题连击计数（触发调试面板）
         self._debug_section = None       # 调试面板引用
         self._debug_label = None         # 调试信息文本引用
-        self._build_ui()
+        self._ui_built = False           # 是否已构建完整 UI
+
+        # ⚠️ 不在 __init__ 中构建 UI，避免 build() 阶段阻塞主线程
+        # 完整 UI 在 on_enter() 中按需构建
+        self._build_placeholder()
+
+    def _build_placeholder(self):
+        """显示占位标签，避免黑屏"""
+        try:
+            from kivy.uix.label import Label
+            from kivy.core.window import Window
+            from kivy.graphics import Color, Rectangle
+
+            theme = get_theme_manager()
+            bg = theme.page_bg()
+            r, g, b, a = hex_to_rgba(bg)
+            with self.canvas.before:
+                Color(r, g, b, a)
+                self._placeholder_rect = Rectangle(size=Window.size)
+                self.bind(pos=lambda w, v: setattr(self._placeholder_rect, "pos", v))
+                self.bind(size=lambda w, v: setattr(self._placeholder_rect, "size", v))
+
+            self._placeholder_label = Label(
+                text="正在加载设置…",
+                font_size=dp_to_px(16),
+                color=hex_to_rgba(theme.text_secondary()),
+                halign="center",
+                valign="middle",
+            )
+            self.add_widget(self._placeholder_label)
+        except Exception:
+            pass
+
+    def on_enter(self):
+        """进入页面时按需构建完整 UI"""
+        if not self._ui_built:
+            self._ui_built = True
+            try:
+                # 移除占位标签
+                if hasattr(self, "_placeholder_label") and self._placeholder_label:
+                    self.remove_widget(self._placeholder_label)
+                    self._placeholder_label = None
+            except Exception:
+                pass
+            # 构建完整 UI（在后台线程准备，主线程添加）
+            from kivy.clock import Clock
+            Clock.schedule_once(lambda dt: self._build_ui(), 0.05)
 
     def _build_ui(self):
         try:
