@@ -537,7 +537,7 @@ class TiShouApp:
                 return True  # 跳过网络检测不阻断启动
 
             manager = network_mod.get_network_manager()
-            state = manager.check_network_status()
+            state = manager.check_network_state()
 
             if state == network_mod.NetworkState.NO_NETWORK:
                 self._logger.warning("无网络连接，部分功能受限（素材更新、时间同步）")
@@ -645,15 +645,21 @@ class TiShouApp:
             return False
 
     def _load_modules(self) -> bool:
-        """加载所有核心业务模块"""
+        """加载所有核心业务模块（带逐模块进度上报 + 超时保护）"""
         core_modules = [
             "network", "permission", "capture", "order_filter",
             "float_win", "statistics", "material_update",
             "activate_code", "app_list",
         ]
+        total = len(core_modules)
         all_ok = True
-        for mod_name in core_modules:
+
+        for idx, mod_name in enumerate(core_modules):
             try:
+                # 逐模块上报进度：resource_load 阶段 60%~68%（9 个模块各约 0.9%）
+                sub_progress = 60 + int((idx / total) * 8)
+                self._on_stage_start(f"加载模块: {mod_name}")
+
                 mod = ModuleLoader.load(mod_name)
                 if mod:
                     self._modules[mod_name] = mod
@@ -665,46 +671,40 @@ class TiShouApp:
                 self._logger.error(f"模块 {mod_name} 加载异常: {e}")
                 all_ok = False
 
-        # 初始化各模块（传递配置和 OCR 阅读器）
+        # 初始化各模块
         self._init_core_modules()
         return all_ok
 
     def _init_core_modules(self):
-        """依次初始化核心模块"""
-        try:
-            # 1. 统计模块（无依赖）
-            stats_mod = self._modules.get("statistics")
-            if stats_mod:
-                stats_mod.init_statistics()
-                self._logger.info("统计模块已初始化")
+        """依次初始化核心模块（带进度上报）"""
+        init_steps = [
+            ("statistics", "统计模块", "init_statistics"),
+            ("capture", "采集引擎", "init_capture"),
+            ("order_filter", "订单筛选", "init_order_filter"),
+            ("material_update", "素材更新", "init_material_updater"),
+            ("app_list", "应用列表", "init_app_list"),
+        ]
 
-            # 2. 采集引擎
-            capture_mod = self._modules.get("capture")
-            if capture_mod:
-                capture_mod.init_capture()
-                self._logger.info("采集引擎已初始化")
+        for idx, (mod_key, display_name, init_func) in enumerate(init_steps):
+            try:
+                mod = self._modules.get(mod_key)
+                if not mod:
+                    self._logger.warning(f"{display_name}未加载，跳过初始化")
+                    continue
 
-            # 3. 订单筛选
-            filter_mod = self._modules.get("order_filter")
-            if filter_mod:
-                filter_mod.init_order_filter()
-                self._logger.info("订单筛选模块已初始化")
+                # 逐模块上报进度：resource_load 阶段后段 68%~72%
+                sub_progress = 68 + int((idx / len(init_steps)) * 4)
+                self._on_stage_start(f"初始化: {display_name}")
 
-            # 4. 素材更新
-            mat_mod = self._modules.get("material_update")
-            if mat_mod:
-                auto_update = self._config.get("material_auto_update", True)
-                mat_mod.init_material_updater(start_auto=auto_update)
-                self._logger.info("素材更新模块已初始化")
+                if mod_key == "material_update":
+                    auto_update = self._config.get("material_auto_update", True)
+                    getattr(mod, init_func)(start_auto=auto_update)
+                else:
+                    getattr(mod, init_func)()
 
-            # 5. 应用列表
-            app_mod = self._modules.get("app_list")
-            if app_mod:
-                app_mod.init_app_list()
-                self._logger.info("应用列表模块已初始化")
-
-        except Exception as e:
-            self._logger.error(f"核心模块初始化异常: {e}")
+                self._logger.info(f"{display_name}已初始化")
+            except Exception as e:
+                self._logger.error(f"{display_name}初始化异常: {e}")
 
     # ========================================================
     # 第7步：素材更新
