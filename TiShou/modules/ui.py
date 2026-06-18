@@ -464,6 +464,7 @@ class TiShouUI:
                         "disclaimer": 35,
                         "activation": 45,
                         "resource_load": 60,
+                        "ocr_load": 70,
                         "material_update": 80,
                         "services_start": 90,
                         "completed": 100,
@@ -908,6 +909,7 @@ class LoadingScreen(Screen):
         self._loading = False
         self._cold_start_done = False
         self._fallback_triggered = False
+        self._real_progress_received = False  # 真实进度接管标记
         self._build_ui()
 
     def _build_ui(self):
@@ -1004,11 +1006,15 @@ class LoadingScreen(Screen):
         """
         占位动画：冷启动接管前，让进度条缓慢前进
         最大到 30%（避免与真实进度冲突）
+        一旦真实冷启动进度到达（>30%），立即停止占位动画
         """
         import time
         progress = 5
         try:
             while self._loading and not self._cold_start_done and progress < 30:
+                # 检查真实进度是否已接管（>30% 说明冷启动已开始汇报进度）
+                if self._real_progress_received:
+                    break
                 self._update_progress(progress, "正在准备…")
                 progress += 3
                 time.sleep(1.5)
@@ -1019,7 +1025,7 @@ class LoadingScreen(Screen):
         """
         冷启动超时兜底：
         如果 COLD_START_TIMEOUT 秒后冷启动仍未完成，
-        显示提示但仍保持加载状态（不卡死）
+        显示提示但仍保持加载状态（不卡死，OCR 模型首次加载较慢）
         """
         import time
         time.sleep(self.COLD_START_TIMEOUT)
@@ -1027,10 +1033,10 @@ class LoadingScreen(Screen):
             if not self._cold_start_done and not self._fallback_triggered:
                 self._fallback_triggered = True
                 self._update_progress(
-                    self._progress_bar.value if self._progress_bar else 50,
-                    "正在启动…请确保网络畅通"
+                    self._progress_bar.value if self._progress_bar else 70,
+                    "首次加载较慢，请耐心等待（OCR 模型初始化中）…"
                 )
-                self._log_error("冷启动超时，仍在等待")
+                self._log_error("冷启动超时，仍在等待（可能 OCR 模型加载中）")
         except Exception:
             pass
 
@@ -1051,6 +1057,9 @@ class LoadingScreen(Screen):
                 self._percent_label.text = f"{int(value)}%"
             if self._status_label and text:
                 self._status_label.text = text
+            # 真实冷启动进度到达（>30%）→ 停掉占位动画
+            if value > 30:
+                self._real_progress_received = True
         except Exception:
             pass
 

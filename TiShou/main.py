@@ -176,7 +176,8 @@ class StartupStage:
     PERMISSION_CHECK = "permission_check"   # 权限检测
     DISCLAIMER = "disclaimer"               # 免责声明
     ACTIVATION = "activation"               # 卡密验证
-    RESOURCE_LOAD = "resource_load"         # 资源加载+OCR
+    RESOURCE_LOAD = "resource_load"         # 核心模块加载
+    OCR_LOAD = "ocr_load"                   # OCR 模型加载（首次 30-60s）
     MATERIAL_UPDATE = "material_update"     # 素材更新
     SERVICES_START = "services_start"       # 后台服务启动
     COMPLETED = "completed"                 # 冷启动完成
@@ -459,11 +460,18 @@ class TiShouApp:
 
             # ---- 第6步：资源加载 ----
             self._stage = StartupStage.RESOURCE_LOAD
-            self._on_stage_start("核心模块加载与 OCR 模型初始化")
-            # ⚠️ 必须先加载模块（含 capture 模块），再初始化 OCR 引擎
+            self._on_stage_start("核心模块加载")
             modules_ok = self._load_modules()
-            ocr_ok = self._load_ocr() if modules_ok else False
-            self._on_stage_end("核心模块加载与 OCR 模型初始化", ok=modules_ok)
+            self._on_stage_end("核心模块加载", ok=modules_ok)
+
+            # OCR 模型加载单独汇报进度（首次加载约需 30-60 秒）
+            if modules_ok:
+                self._stage = StartupStage.OCR_LOAD
+                self._on_stage_start("OCR 识别模型加载（首次较慢，请耐心等待）")
+                ocr_ok = self._load_ocr()
+                self._on_stage_end("OCR 识别模型加载", ok=ocr_ok)
+            else:
+                ocr_ok = False
 
             # ---- 第7步：素材更新检测 ----
             self._stage = StartupStage.MATERIAL_UPDATE
