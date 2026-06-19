@@ -674,7 +674,10 @@ class PermissionManager:
 
         特殊处理：
           - float_window（SYSTEM_ALERT_WINDOW）：使用 Settings.canDrawOverlays()
-          - 普通权限：使用 android.permissions 或 Context.checkSelfPermission()
+          - accessibility（BIND_ACCESSIBILITY_SERVICE）：检查自定义 Java 服务是否运行
+          - battery（REQUEST_IGNORE_BATTERY_OPTIMIZATIONS）：使用 PowerManager
+          - notifications（POST_NOTIFICATIONS）：API 33+ 才需要动态申请
+          - 普通权限：使用 Context.checkSelfPermission()
 
         :param perm_key: 权限键名
         :return: PermissionState
@@ -682,95 +685,124 @@ class PermissionManager:
         try:
             # ---- 特殊权限：悬浮窗（SYSTEM_ALERT_WINDOW） ----
             if perm_key == "float_window":
-                try:
-                    from jnius import autoclass
-                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                    Settings = autoclass("android.provider.Settings")
+                return self._check_float_window_permission()
 
-                    activity = PythonActivity.mActivity
-                    if not activity:
-                        return PermissionState.UNKNOWN
+            # ---- 特殊权限：无障碍服务（BIND_ACCESSIBILITY_SERVICE） ----
+            # BIND_ACCESSIBILITY_SERVICE 是签名级权限，checkSelfPermission 永远返回 DENIED。
+            # 正确做法：检查我们的自定义 Java AccessibilityService 是否正在运行。
+            if perm_key == "accessibility":
+                return self._check_accessibility_service()
 
-                    # Settings.canDrawOverlays() 是 API 23+ 唯一正确判断方式
-                    # checkSelfPermission() 对 SYSTEM_ALERT_WINDOW 无效
-                    can_draw = Settings.canDrawOverlays(activity)
-                    return PermissionState.GRANTED if can_draw else PermissionState.DENIED
-                except Exception as e:
-                    self._logger.warning(f"悬浮窗权限检查异常: {e}")
-                    # 回退：传统方式（API < 23 有效）
-                    try:
-                        from jnius import autoclass
-                        PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                        PackageManager = autoclass("android.content.pm.PackageManager")
-                        activity = PythonActivity.mActivity
-                        if activity:
-                            result = activity.checkSelfPermission(
-                                "android.permission.SYSTEM_ALERT_WINDOW"
-                            )
-                            if result == PackageManager.PERMISSION_GRANTED:
-                                return PermissionState.GRANTED
-                    except Exception:
-                        pass
-                    return PermissionState.DENIED
+            # ---- 特殊权限：省电白名单（REQUEST_IGNORE_BATTERY_OPTIMIZATIONS） ----
+            # 不能用 checkSelfPermission，必须用 PowerManager.isIgnoringBatteryOptimizations()
+            if perm_key == "battery":
+                return self._check_battery_optimization()
 
             # ---- 特殊权限：屏幕录制（MEDIA_PROJECTION） ----
             # MEDIA_PROJECTION 需要通过 MediaProjectionManager.createScreenCaptureIntent()
             # 以 startActivityForResult 方式获取授权，无法用 checkSelfPermission 判断
-            # 这里始终返回 UNKNOWN 并引导用户手动授权
             if perm_key == "screen_record":
-                self._logger.debug("MEDIA_PROJECTION 需通过系统录屏弹窗授权，跳过 checkSelfPermission")
-                # 标记为 unknown，后续申请流程会弹出系统录屏确认弹窗
-                try:
-                    from jnius import autoclass
-                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                    activity = PythonActivity.mActivity
-                    if activity:
-                        # 如果 Android 13+ 的 MEDIA_PROJECTION 可用，尝试直接返回 DENIED
-                        # 让流程进入申请阶段
-                        return PermissionState.DENIED
-                except Exception:
-                    pass
                 return PermissionState.DENIED
 
-            # ---- 普通权限 ----
-            try:
-                from android.permissions import check_permission
-                android_perm = self._get_android_perm_name(perm_key)
-                if not android_perm:
-                    return PermissionState.GRANTED
+            # ---- 通知权限（POST_NOTIFICATIONS）：仅 Android 13（API 33）+ 需要动态申请 ----
+            if perm_key == "notifications":
+                return self._check_notification_permission()
 
-                if check_permission(android_perm):
-                    return PermissionState.GRANTED
-                else:
-                    return PermissionState.DENIED
-            except ImportError:
-                # 回退：通过 pyjnius 桥接 Android Context.checkSelfPermission
-                try:
-                    from jnius import autoclass
-                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                    Context = autoclass("android.content.Context")
-                    PackageManager = autoclass("android.content.pm.PackageManager")
+            # ---- 后台运行（FOREGROUND_SERVICE）：normal 权限，安装时自动授予 ----
+            if perm_key == "background":
+                return PermissionState.GRANTED
 
-                    activity = PythonActivity.mActivity
-                    if not activity:
-                        return PermissionState.UNKNOWN
-
-                    android_perm = self._get_android_perm_name(perm_key)
-                    if not android_perm:
-                        return PermissionState.GRANTED
-
-                    result = activity.checkSelfPermission(android_perm)
-                    if result == PackageManager.PERMISSION_GRANTED:
-                        return PermissionState.GRANTED
-                    else:
-                        return PermissionState.DENIED
-                except Exception:
-                    self._logger.debug("无法通过安卓 API 检查权限（非安卓环境）")
-                    return PermissionState.GRANTED  # 非安卓环境模拟通过
+            # ---- 普通权限（存储 / 定位 / 网络） ----
+            return self._check_normal_permission(perm_key)
 
         except Exception as e:
             self._logger.warning(f"安卓 API 权限检查失败: {e}")
             return PermissionState.UNKNOWN
+
+    # ---------- 悬浮窗权限检查 ----------
+    def _check_float_window_permission(self) -> PermissionState:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Settings = autoclass("android.provider.Settings")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return PermissionState.UNKNOWN
+            can_draw = Settings.canDrawOverlays(activity)
+            return PermissionState.GRANTED if can_draw else PermissionState.DENIED
+        except Exception as e:
+            self._logger.warning(f"悬浮窗权限检查异常: {e}")
+            return PermissionState.DENIED
+
+    # ---------- 无障碍服务检查 ----------
+    def _check_accessibility_service(self) -> PermissionState:
+        try:
+            from jnius import autoclass
+            svc = autoclass("org.tishou.accessibility.TiShouAccessibilityService")
+            if svc.isAvailable():
+                return PermissionState.GRANTED
+            return PermissionState.DENIED
+        except Exception as e:
+            self._logger.debug(f"无障碍服务检查异常（可能未安装或未开启）: {e}")
+            return PermissionState.DENIED
+
+    # ---------- 省电白名单检查 ----------
+    def _check_battery_optimization(self) -> PermissionState:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            PowerManager = autoclass("android.os.PowerManager")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return PermissionState.UNKNOWN
+            pm = activity.getSystemService(PowerManager)
+            if pm and pm.isIgnoringBatteryOptimizations(activity.getPackageName()):
+                return PermissionState.GRANTED
+            return PermissionState.DENIED
+        except Exception as e:
+            self._logger.debug(f"省电白名单检查异常: {e}")
+            return PermissionState.DENIED
+
+    # ---------- 通知权限检查（API 33+） ----------
+    def _check_notification_permission(self) -> PermissionState:
+        try:
+            from jnius import autoclass
+            Build = autoclass("android.os.Build")
+            if Build.VERSION.SDK_INT < 33:
+                return PermissionState.GRANTED
+            return self._check_normal_permission("notifications")
+        except Exception:
+            return PermissionState.GRANTED
+
+    # ---------- 普通权限检查 ----------
+    def _check_normal_permission(self, perm_key: str) -> PermissionState:
+        android_perm = self._get_android_perm_name(perm_key)
+        if not android_perm:
+            return PermissionState.GRANTED
+
+        # 方法1：android.permissions 模块
+        try:
+            from android.permissions import check_permission
+            if check_permission(android_perm):
+                return PermissionState.GRANTED
+            return PermissionState.DENIED
+        except ImportError:
+            pass
+
+        # 方法2：pyjnius 桥接 checkSelfPermission
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            PackageManager = autoclass("android.content.pm.PackageManager")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return PermissionState.UNKNOWN
+            result = activity.checkSelfPermission(android_perm)
+            if result == PackageManager.PERMISSION_GRANTED:
+                return PermissionState.GRANTED
+            return PermissionState.DENIED
+        except Exception:
+            return PermissionState.GRANTED
 
     def _get_android_perm_name(self, perm_key: str) -> str:
         """根据权限键名获取安卓权限字符串"""
@@ -892,9 +924,12 @@ class PermissionManager:
         :param perm_key: 权限键名
         :return: True=申请成功, False=申请失败或用户拒绝
 
-        注意：
-          普通权限 → request_permissions() 弹窗申请
-          特殊权限（float_window / SYSTEM_ALERT_WINDOW）→ Intent 跳转系统设置页
+        分类处理：
+          普通权限（存储/定位/通知/网络）→ request_permissions() 弹窗
+          特殊权限（悬浮窗）             → Intent 跳转系统设置页
+          特殊权限（无障碍服务）         → Intent 跳转无障碍设置页
+          特殊权限（屏幕录制）           → MediaProjection Intent 弹窗
+          特殊权限（省电白名单）         → ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
         """
         try:
             if not is_android():
@@ -906,68 +941,162 @@ class PermissionManager:
             if not android_perm:
                 return True
 
-            # ============================================================
-            # 特殊权限：悬浮窗（SYSTEM_ALERT_WINDOW）
-            # 不能用普通权限 API 申请，需 Intent 跳转系统设置页手动开启
-            # ============================================================
+            # ---- 特殊权限：悬浮窗 → 跳转悬浮窗管理页 ----
             if perm_key == "float_window":
+                return self._request_float_window()
+
+            # ---- 特殊权限：无障碍服务 → 跳转无障碍设置页 ----
+            if perm_key == "accessibility":
+                return self._request_accessibility_service()
+
+            # ---- 特殊权限：屏幕录制 → 启动 MediaProjection Intent ----
+            if perm_key == "screen_record":
+                return self._request_screen_record()
+
+            # ---- 特殊权限：省电白名单 → 跳转电池优化设置 ----
+            if perm_key == "battery":
+                return self._request_battery_optimization()
+
+            # ---- 后台运行：normal 权限，无需动态申请 ----
+            if perm_key == "background":
+                return True
+
+            # ---- 通知权限：仅 Android 13+ 需要动态申请 ----
+            if perm_key == "notifications":
                 try:
                     from jnius import autoclass
-                    PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                    Intent = autoclass("android.content.Intent")
-                    Uri = autoclass("android.net.Uri")
+                    Build = autoclass("android.os.Build")
+                    if Build.VERSION.SDK_INT < 33:
+                        self._permission_cache[perm_key] = PermissionState.GRANTED
+                        return True
+                except Exception:
+                    pass
 
-                    activity = PythonActivity.mActivity
-                    if not activity:
-                        self._logger.warning("无法获取 Activity 实例，无法跳转悬浮窗设置")
-                        return False
-
-                    # 构建 Intent：跳转到悬浮窗管理页（API 23+）
-                    # action: android.settings.action.MANAGE_OVERLAY_PERMISSION
-                    # data: package:<package_name>
-                    intent = Intent(
-                        "android.settings.action.MANAGE_OVERLAY_PERMISSION",
-                        Uri.parse("package:" + activity.getPackageName())
-                    )
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    activity.startActivity(intent)
-                    self._logger.info("已跳转悬浮窗权限设置页，请在系统中手动开启")
-                    return True
-                except Exception as e:
-                    self._logger.error(f"跳转悬浮窗设置页失败: {e}")
-                    # 兜底：尝试用通用应用设置页
-                    try:
-                        from jnius import autoclass
-                        PythonActivity = autoclass("org.kivy.android.PythonActivity")
-                        Intent = autoclass("android.content.Intent")
-
-                        activity = PythonActivity.mActivity
-                        if activity:
-                            intent = Intent("android.settings.APPLICATION_DETAILS_SETTINGS")
-                            Uri = autoclass("android.net.Uri")
-                            intent.setData(Uri.parse("package:" + activity.getPackageName()))
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            activity.startActivity(intent)
-                            self._logger.info("已跳转应用设置页，请手动开启悬浮窗权限")
-                            return True
-                    except Exception:
-                        pass
-                    return False
-
-            # ============================================================
-            # 普通权限：使用 android.permissions.request_permissions()
-            # ============================================================
-            try:
-                from android.permissions import request_permissions, Permission
-                request_permissions([Permission(android_perm)])
-                self._logger.info(f"权限申请已发送: {perm_key}")
-                return True
-            except ImportError:
-                self._logger.warning("android.permissions 模块不可用，无法申请权限")
-                return False
+            # ---- 普通权限：request_permissions() 弹窗 ----
+            return self._request_normal_permission(android_perm, perm_key)
 
         except Exception as e:
             self._logger.error(f"申请权限异常 '{perm_key}': {e}")
+            return False
+
+    # ---------- 悬浮窗权限申请 ----------
+    def _request_float_window(self) -> bool:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            Uri = autoclass("android.net.Uri")
+            activity = PythonActivity.mActivity
+            if not activity:
+                self._logger.warning("无法获取 Activity 实例，无法跳转悬浮窗设置")
+                return False
+            intent = Intent(
+                "android.settings.action.MANAGE_OVERLAY_PERMISSION",
+                Uri.parse("package:" + activity.getPackageName())
+            )
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info("已跳转悬浮窗权限设置页")
+            return True
+        except Exception as e:
+            self._logger.error(f"跳转悬浮窗设置页失败: {e}")
+            return self._open_app_settings_fallback()
+
+    # ---------- 无障碍服务申请 ----------
+    def _request_accessibility_service(self) -> bool:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return False
+            intent = Intent("android.settings.ACCESSIBILITY_SETTINGS")
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info("已跳转无障碍设置页，请手动开启 TiShou 无障碍服务")
+            return True
+        except Exception as e:
+            self._logger.error(f"跳转无障碍设置页失败: {e}")
+            return self._open_app_settings_fallback()
+
+    # ---------- 屏幕录制权限申请 ----------
+    def _request_screen_record(self) -> bool:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return False
+            MediaProjectionManager = autoclass(
+                "android.media.projection.MediaProjectionManager"
+            )
+            mp_manager = activity.getSystemService(
+                autoclass("android.content.Context").MEDIA_PROJECTION_SERVICE
+            )
+            if not mp_manager:
+                self._logger.warning("MediaProjectionManager 不可用")
+                return False
+            intent = mp_manager.createScreenCaptureIntent()
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info("已弹出屏幕录制授权弹窗，请点击「立即开始」")
+            return True
+        except Exception as e:
+            self._logger.error(f"启动屏幕录制授权失败: {e}")
+            return False
+
+    # ---------- 省电白名单申请 ----------
+    def _request_battery_optimization(self) -> bool:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            Uri = autoclass("android.net.Uri")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return False
+            intent = Intent(
+                "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+                Uri.parse("package:" + activity.getPackageName())
+            )
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info("已跳转省电白名单设置页，请选择「允许」")
+            return True
+        except Exception as e:
+            self._logger.error(f"跳转省电白名单设置失败: {e}")
+            return self._open_app_settings_fallback()
+
+    # ---------- 普通权限申请 ----------
+    def _request_normal_permission(self, android_perm: str, perm_key: str) -> bool:
+        try:
+            from android.permissions import request_permissions, Permission
+            request_permissions([Permission(android_perm)])
+            self._logger.info(f"权限申请已发送: {perm_key}")
+            return True
+        except ImportError:
+            self._logger.warning("android.permissions 模块不可用，无法申请权限")
+            return False
+
+    # ---------- 兜底：跳转应用设置页 ----------
+    def _open_app_settings_fallback(self) -> bool:
+        try:
+            from jnius import autoclass
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            Uri = autoclass("android.net.Uri")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return False
+            intent = Intent("android.settings.APPLICATION_DETAILS_SETTINGS")
+            intent.setData(Uri.parse("package:" + activity.getPackageName()))
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info("已跳转应用设置页（兜底）")
+            return True
+        except Exception:
             return False
 
     def _apply_degradation(self, perm_key: str) -> Optional[dict]:
@@ -1282,3 +1411,106 @@ def set_manual_region_ui(region: str):
         mgr._degradation.set_manual_region(region)
     except Exception as e:
         LogManager.get_logger("app").error(f"UI 设置手动地区异常: {e}")
+
+
+# ============================================================
+# 模块 → 必需权限 映射表
+# ============================================================
+# 每个模块加载/初始化时，检查其依赖的权限是否已授予；
+# 缺失则立即申请，避免模块因权限不足而功能异常或卡住。
+
+MODULE_REQUIRED_PERMISSIONS = {
+    "float_win": ["float_window", "notifications", "battery"],
+    "capture":    ["accessibility"],
+    "order_filter":   [],
+    "statistics":     [],
+    "material_update":[],
+    "app_list":       [],
+    "activate_code":  [],
+    "network":        [],
+    "permission":     [],
+}
+
+# 必须跳转系统设置页的权限（无法通过弹窗申请的"特殊权限"）
+# 这些权限申请后用户需手动操作，加载流程不应等待
+SPECIAL_PERMISSIONS = {"float_window", "accessibility", "battery", "screen_record"}
+
+
+def get_module_permissions(module_name: str) -> list:
+    """
+    获取模块加载所需的权限列表
+
+    :param module_name: 模块名称（如 "float_win", "capture"）
+    :return: 权限键名列表
+    """
+    return MODULE_REQUIRED_PERMISSIONS.get(module_name, [])
+
+
+def request_module_permissions(
+    module_name: str,
+    on_progress: Callable[[str, str], None] = None
+) -> dict:
+    """
+    检查模块必需权限，缺失则立即申请
+    供 main.py 加载模块时调用，确保权限在模块使用前就绪。
+
+    返回值：
+      {
+        "granted": [...],     # 已授予的权限
+        "missing": [...],     # 缺失的权限（已触发申请）
+        "special": [...],     # 需要跳转系统设置的特殊权限
+        "all_ok": bool,       # 是否全部就绪
+      }
+
+    :param module_name: 模块名称
+    :param on_progress: 进度回调(perm_key, status)
+    :return: 权限状态字典
+    """
+    required = get_module_permissions(module_name)
+    if not required:
+        return {"granted": [], "missing": [], "special": [], "all_ok": True}
+
+    try:
+        mgr = get_permission_manager()
+        granted = []
+        missing = []
+        special = []
+
+        for perm_key in required:
+            # 检查当前状态
+            state = mgr._check_single_permission(perm_key)
+
+            if state == PermissionState.GRANTED:
+                granted.append(perm_key)
+                if on_progress:
+                    on_progress(perm_key, "granted")
+            else:
+                missing.append(perm_key)
+                if perm_key in SPECIAL_PERMISSIONS:
+                    special.append(perm_key)
+
+                # 立即申请权限
+                if on_progress:
+                    on_progress(perm_key, "requesting")
+                mgr._request_permission(perm_key)
+
+        result = {
+            "granted": granted,
+            "missing": missing,
+            "special": special,
+            "all_ok": len(missing) == 0,
+        }
+
+        if missing:
+            LogManager.get_logger("app").info(
+                f"[{module_name}] 缺失权限: {missing}"
+                + (f" (特殊权限需手动开启: {special})" if special else "")
+            )
+
+        return result
+
+    except Exception as e:
+        LogManager.get_logger("app").error(
+            f"[{module_name}] 权限检查异常: {e}"
+        )
+        return {"granted": [], "missing": [], "special": [], "all_ok": False}

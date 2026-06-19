@@ -4,11 +4,11 @@
 ====================================
 遵守全局 OCR 规范、延迟规范、异常规范。
 
-主力引擎：accessible-android 无障碍服务抓取（优先）
+主力引擎：自定义 Java AccessibilityService 无障碍服务抓取（优先）
 兜底引擎：easyocr + Pillow 纯本地 OCR
 
 流程：
-  1. 先通过 accessible-android 无障碍服务读取订单信息
+  1. 先通过 TiShouAccessibilityService（pyjnius 桥接）读取订单信息
   2. 读取失败 / 无订单文本 / 控件异常 / 超时 → 自动降级启用 EasyOCR 截图识别
   3. EasyOCR 流程：截取有效区域 → 灰度 → 二值化 → 降噪 → 放大1.3倍
   4. 识别后主动释放图片资源
@@ -46,7 +46,7 @@ from modules.utils import (
 class CaptureEngine:
     """捕获引擎常量"""
 
-    ACCESSIBILITY = "accessibility"    # accessible-android 主力引擎（优先）
+    ACCESSIBILITY = "accessibility"    # TiShou 无障碍服务主力引擎（优先）
     EASYOCR = "easyocr"                # easyocr + Pillow 兜底引擎
 
 
@@ -437,7 +437,7 @@ class EasyOcrEngine:
 
 
 # ============================================================
-# accessible-android 无障碍引擎（主力）
+# TiShou 无障碍服务引擎（主力）
 # ============================================================
 
 class AccessibilityEngine:
@@ -446,29 +446,33 @@ class AccessibilityEngine:
     ============================
     作为第一优先识别引擎，通过 Android 无障碍服务直接获取界面文本信息。
     当不可用或抓取失败时，自动降级至 EasyOCR 截图识别（兜底方案）。
+
+    使用自定义 Java AccessibilityService（TiShouAccessibilityService），
+    通过 pyjnius 桥接调用，无需依赖第三方 android_accessibility 包。
     """
 
     def __init__(self):
-        """初始化无障碍引擎"""
         self._logger = LogManager.get_logger("ocr")
         self._available = False
         self._check_lock = threading.Lock()
+        self._service_class = None
 
-        # 检查环境
         self._check_availability()
 
     def _check_availability(self):
-        """检查 accessible-android 是否可用"""
+        """检查 TiShou 无障碍服务是否已开启"""
         try:
-            # 尝试导入 accessible-android
-            import android_accessibility  # noqa
-            self._available = True
-            self._logger.info("accessible-android 无障碍引擎可用")
-        except ImportError:
-            self._available = False
-            self._logger.warning(
-                "accessible-android 未安装，无障碍引擎不可用"
+            from jnius import autoclass
+            self._service_class = autoclass(
+                "org.tishou.accessibility.TiShouAccessibilityService"
             )
+            self._available = self._service_class.isAvailable()
+            if self._available:
+                self._logger.info("TiShou 无障碍服务已连接")
+            else:
+                self._logger.warning(
+                    "TiShou 无障碍服务未运行，请在系统设置中开启"
+                )
         except Exception as e:
             self._available = False
             self._logger.warning(f"无障碍引擎检查异常: {e}")
@@ -493,22 +497,14 @@ class AccessibilityEngine:
         try:
             start_time = time.time()
 
-            # accessible-android 抓取界面节点文本
-            # 注意：此代码仅在安卓真机 + accessible-android 安装时生效
-            from android_accessibility import AccessibilityService
-
-            service = AccessibilityService()
-            nodes = service.get_root_node()
-
-            if not nodes:
-                self._logger.warning("无障碍服务未获取到界面节点")
+            instance = self._service_class.getInstance()
+            if not instance:
+                self._logger.warning("无障碍服务实例不可用（可能已被系统回收）")
+                self._available = False
                 return []
 
-            # 提取所有文本节点
-            texts = []
-            self._extract_text_nodes(nodes, texts)
+            texts = instance.extractAllTexts()
 
-            # 格式化结果
             result = [[text] for text in texts if text.strip()]
 
             elapsed = time.time() - start_time
@@ -517,76 +513,19 @@ class AccessibilityEngine:
             )
             return result
 
-        except ImportError:
-            self._available = False
-            self._logger.warning("accessible-android 未安装")
-            return []
         except Exception as e:
             self._logger.error(f"无障碍抓取异常: {e}")
             return []
-
-    def _extract_text_nodes(self, node, texts: list):
-        """
-        递归提取界面节点的文本内容
-
-        :param node: 当前节点
-        :param texts: 文本列表（引用传递）
-        """
-        try:
-            # 提取节点文本
-            if hasattr(node, "get_text") and callable(node.get_text):
-                text = node.get_text()
-                if text and isinstance(text, str) and text.strip():
-                    texts.append(text.strip())
-
-            # 提取子节点
-            if hasattr(node, "get_children") and callable(node.get_children):
-                children = node.get_children()
-                if children:
-                    for child in children:
-                        self._extract_text_nodes(child, texts)
-
-        except Exception:
-            pass  # 单个节点异常不影响整体
 
     @ExceptionUtil.safe_call(default_return=False, log_level="warning")
     def take_screenshot(self, save_path: str) -> bool:
         """
         通过无障碍服务截屏（备用截屏方案）
-
-        :param save_path: 保存路径
-        :return: True=成功
+        注意：Android 11+ 的 AccessibilityService.takeScreenshot 为异步回调 API，
+        在 pyjnius 中难以直接调用，此处返回 False 由上层降级到 MediaProjection。
         """
-        try:
-            # 通过无障碍服务截屏
-            from android_accessibility import AccessibilityService
-            service = AccessibilityService()
-            screenshot = service.take_screenshot()
-
-            if screenshot is None:
-                self._logger.warning("无障碍截屏失败")
-                return False
-
-            # 保存截图
-            from PIL import Image
-            img = Image.frombytes(
-                "RGBA",
-                (screenshot.width, screenshot.height),
-                screenshot.data,
-            )
-            ensure_dir(os.path.dirname(save_path))
-            img.save(save_path, "PNG")
-            img.close()
-
-            self._logger.debug(f"无障碍截屏已保存: {save_path}")
-            return True
-
-        except ImportError:
-            self._logger.warning("accessible-android 未安装，无法截屏")
-            return False
-        except Exception as e:
-            self._logger.error(f"无障碍截屏异常: {e}")
-            return False
+        self._logger.debug("无障碍截屏不支持，降级到其他截屏方案")
+        return False
 
 
 # ============================================================
@@ -597,10 +536,10 @@ class CaptureManager:
     """
     双采集引擎管理器
     ===============
-    整合 accessible-android（主力）和 easyocr（兜底）双引擎。
+    整合 TiShou 无障碍服务（主力）和 easyocr（兜底）双引擎。
 
     执行顺序：
-      1. 优先使用 accessible-android 无障碍服务读取订单信息
+      1. 优先使用 TiShou 无障碍服务读取订单信息
       2. 读取失败 / 无结果 / 异常 / 超时 → 自动降级 EasyOCR 截图识别
       3. 支持手动切换引擎顺序
 
@@ -696,9 +635,9 @@ class CaptureManager:
             # 先检查无障碍引擎（主力引擎）
             accessibility_engine = self._get_accessibility()
             if accessibility_engine and accessibility_engine.is_available:
-                self._logger.info("accessible-android 主力引擎可用")
+                self._logger.info("TiShou 无障碍服务主力引擎可用")
             else:
-                self._logger.warning("accessible-android 不可用，将使用 EasyOCR 兜底")
+                self._logger.warning("TiShou 无障碍服务不可用，将使用 EasyOCR 兜底")
 
             # 预热 easyocr（兜底引擎）
             easyocr_engine = self._get_easyocr()
@@ -773,7 +712,7 @@ class CaptureManager:
         """
         截取屏幕
 
-        优先使用 accessible-android 截屏（安卓环境），
+        优先使用 TiShou 无障碍服务截屏（安卓环境），
         Windows 开发环境使用模拟截图。
 
         :return: 截图保存路径，失败返回空字符串
@@ -870,7 +809,7 @@ class CaptureManager:
         对预处理图片执行 OCR 识别
 
         执行顺序（无障碍优先）：
-          1. 先尝试 accessible-android 无障碍服务读取订单信息
+          1. 先尝试 TiShou 无障碍服务读取订单信息
           2. 读取失败 / 无订单文本 / 控件异常 / 超时 → 自动降级 EasyOCR
           3. 全部失败 → 返回空列表
 

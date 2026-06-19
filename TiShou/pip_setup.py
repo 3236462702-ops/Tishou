@@ -488,15 +488,16 @@ format = columns
 
     def check_android_libs(self):
         """
-        检查三个安卓专属库状态（仅供信息提示）
+        检查安卓专属库状态（仅供信息提示）
         注意：
-          - accessible-android / android-apps — 非 PyPI 包，不存在
+          - TiShou 无障碍服务 → 已改用自定义 Java AccessibilityService + pyjnius 桥接
           - pyobjus — 是 iOS 桥接库，不适用 Android
+          - android-apps — 非 PyPI 包，不存在
         均不在 Windows 安装，也不应写入 buildozer.spec requirements
         """
         self._logger.step("检查安卓专属库状态（仅提示信息）...")
         android_libs = [
-            ("accessible-android", "android_accessibility"),
+            ("TiShou 无障碍服务（Java + pyjnius）", "pyjnius"),
             ("pyobjus", "pyobjus"),
             ("android-apps", "android_apps"),
         ]

@@ -1,7 +1,8 @@
 # =============================================================================
 # TiShou — Buildozer 打包配置文件
-# 版本：v2.0.0（全新构建，未沿用旧配置）
-# 生成日期：2026-06-19
+# 版本：v2.1.0
+# 更新日期：2026-06-19
+# 更新内容：自建 Java AccessibilityService + KeepAliveService + 权限重构
 # =============================================================================
 # 打包目标：Android APK（仅适配安卓真机）
 # 项目框架：Kivy 2.3.0+ / Python 3.11
@@ -99,6 +100,12 @@ android.gradle = True
 # (bool) 启用 AndroidX 支持库
 android.use_androidx = True
 
+# (str) 自定义 Java 源码目录（无障碍服务 + 前台保活服务）
+android.add_src = src/main/java
+
+# (str) 自定义 Android 资源目录（无障碍服务 XML 配置）
+android.add_resources = %(source.dir)s/res
+
 # ═══════════════════════════════════════════════════════════════
 # Android 权限清单
 # 这些权限在 Windows 上无法声明或测试，仅在 APK 编译时生效
@@ -140,14 +147,24 @@ android.vibrate = True
 # (str) p4a 引导模式
 # android.bootstrap = sdl2
 
-# (str) 额外 AndroidManifest.xml 配置
-# 无障碍服务说明：
-#   Kivy 纯 Python 应用无法直接注册系统级 AccessibilityService
-#   （需要 Java AccessibilityService 子类）
-#   实际采集方案：
-#   ① pyjnius 运行时调用 android.accessibilityservice API（代码层实现）
-#   ② 兜底：EasyOCR 截图识别（已实现）
-# android.extra_manifest_xml =
+# (str) 额外 AndroidManifest.xml 配置（注入到 <application> 标签内）
+# 注册无障碍服务 + 前台保活服务（Android 14+ foregroundServiceType）
+android.extra_manifest_xml = \
+    <service \
+        android:name="org.tishou.accessibility.TiShouAccessibilityService" \
+        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" \
+        android:exported="true"> \
+        <intent-filter> \
+            <action android:name="android.accessibilityservice.AccessibilityService" /> \
+        </intent-filter> \
+        <meta-data \
+            android:name="android.accessibilityservice" \
+            android:resource="@xml/accessibility_service_config" /> \
+    </service> \
+    <service \
+        android:name="org.tishou.service.KeepAliveService" \
+        android:exported="false" \
+        android:foregroundServiceType="specialUse" />
 
 #
 # ─────────────────────────────────────────────────────────────

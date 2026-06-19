@@ -50,8 +50,8 @@ TiShou — 主入口（完整冷启动流程）
    android.media.AudioTrack），requirements 中不写 pygame。
 
 四、三个所谓"安卓专属库"的实际情况（⚠️ 真实情况与约束文件描述不符）：
-   accessible-android  —— ❌ 非 PyPI 包，无 p4a recipe → 不写进 requirements
-                           import: android_accessibility（capture.py）try-except 保护
+   accessible-android  —— ❌ 非 PyPI 包，已移除 → 改用自定义 Java AccessibilityService
+                           TiShouAccessibilityService.java + pyjnius 桥接调用
                            缺失时自动降级：使用 EasyOCR 截图识别
    pyobjus              —— ❌ 是 iOS 桥接库（Objective-C），不适用 Android
                            Android 悬浮窗用 pyjnius → android.view.WindowManager
@@ -646,7 +646,7 @@ class TiShouApp:
             return False
 
     def _load_modules(self) -> bool:
-        """加载所有核心业务模块（带逐模块进度上报 + 超时保护）"""
+        """加载所有核心业务模块（带逐模块进度上报 + 权限主动申请）"""
         core_modules = [
             "network", "permission", "capture", "order_filter",
             "float_win", "statistics", "material_update",
@@ -657,6 +657,9 @@ class TiShouApp:
 
         for idx, mod_name in enumerate(core_modules):
             try:
+                # ---- 模块加载前：检查并申请该模块所需权限 ----
+                self._ensure_module_permissions(mod_name)
+
                 # 逐模块上报进度：resource_load 阶段 60%~68%（9 个模块各约 0.9%）
                 sub_progress = 60 + int((idx / total) * 8)
                 self._on_stage_start(f"加载模块: {mod_name}")
@@ -677,7 +680,7 @@ class TiShouApp:
         return all_ok
 
     def _init_core_modules(self):
-        """依次初始化核心模块（带进度上报）"""
+        """依次初始化核心模块（带进度上报 + 权限主动申请）"""
         init_steps = [
             ("statistics", "统计模块", "init_statistics"),
             ("capture", "采集引擎", "init_capture"),
@@ -693,6 +696,9 @@ class TiShouApp:
                     self._logger.warning(f"{display_name}未加载，跳过初始化")
                     continue
 
+                # ---- 模块初始化前：检查并申请该模块所需权限 ----
+                self._ensure_module_permissions(mod_key)
+
                 # 逐模块上报进度：resource_load 阶段后段 68%~72%
                 sub_progress = 68 + int((idx / len(init_steps)) * 4)
                 self._on_stage_start(f"初始化: {display_name}")
@@ -706,6 +712,45 @@ class TiShouApp:
                 self._logger.info(f"{display_name}已初始化")
             except Exception as e:
                 self._logger.error(f"{display_name}初始化异常: {e}")
+
+    def _ensure_module_permissions(self, module_name: str):
+        """
+        确保模块所需权限已就绪
+        缺失则立即申请（弹窗 / 跳转系统设置），不阻塞加载流程
+
+        权限显示名映射（用于 UI 进度提示）
+        """
+        _PERM_DISPLAY = {
+            "float_window": "悬浮窗",
+            "accessibility": "无障碍服务",
+            "notifications": "通知",
+            "battery": "省电白名单",
+            "screen_record": "屏幕录制",
+        }
+        try:
+            from modules.permission import request_module_permissions, SPECIAL_PERMISSIONS
+
+            def _on_perm_progress(perm_key, status):
+                display = _PERM_DISPLAY.get(perm_key, perm_key)
+                if status == "requesting":
+                    if perm_key in SPECIAL_PERMISSIONS:
+                        self._on_stage_start(f"请开启: {display}（将跳转系统设置）")
+                    else:
+                        self._on_stage_start(f"申请权限: {display}")
+                # granted 不显示，避免刷屏
+
+            result = request_module_permissions(module_name, _on_perm_progress)
+
+            if result.get("special"):
+                special_names = [
+                    _PERM_DISPLAY.get(p, p) for p in result["special"]
+                ]
+                self._logger.info(
+                    f"[{module_name}] 需手动开启的权限: {', '.join(special_names)}"
+                )
+
+        except Exception as e:
+            self._logger.warning(f"[{module_name}] 权限检查/申请异常: {e}")
 
     # ========================================================
     # 第7步：素材更新
