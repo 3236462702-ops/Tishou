@@ -529,3 +529,9 @@ python3,kivy,pyjnius,requests,easyocr,pillow,numpy,schedule
 1. 再次确认 `git status` 干净、符合预期
 2. 撰写清晰的 commit message（说明修改内容 + 原因）
 3. 执行 `git push`
+
+### 6. 修复记录维护
+- 每次修复完成后，必须更新 `TiShou/FIX_LOG.md`
+- 记录内容：日期、修复编号、涉及文件、问题描述、严重性、修复方案
+- 目的：对话记录丢失时，AI 可通过读取此文件回溯全部修复历史，避免重复排查
+- 文件格式：Markdown，按日期倒序排列，每次修复一个条目
