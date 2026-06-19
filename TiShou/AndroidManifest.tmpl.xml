@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TiShou 自定义 AndroidManifest 模板：将 service 声明注入 <application> 内部 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="{{ args.package }}"
+    android:versionCode="{{ args.numeric_version }}"
+    android:versionName="{{ args.version }}"
+    android:installLocation="auto">
+
+    <uses-sdk
+        android:minSdkVersion="{{ args.min_sdk_version }}"
+        android:targetSdkVersion="{{ args.sdk_version }}" />
+
+    <!-- 系统权限 -->
+    {% for perm in args.permissions %}
+    <uses-permission android:name="{{ perm }}" />
+    {% endfor %}
+    {% for perm in args.permission_external_app %}
+    <uses-permission android:name="{{ perm }}" />
+    {% endfor %}
+
+    {% for feature in args.features %}
+    <uses-feature android:name="{{ feature }}" />
+    {% endfor %}
+
+    {{ args.extra_manifest_xml }}
+
+    <application
+        android:allowBackup="{{ args.allow_backup }}"
+        android:icon="@drawable/icon"
+        android:label="{{ args.name }}"
+        android:theme="{{ args.theme }}"
+        android:hardwareAccelerated="true"
+        {% if args.backup_rules %}android:fullBackupContent="@xml/{{ args.backup_rules }}"{% endif %}
+        {{ args.extra_manifest_application_attributes }}>
+
+        <meta-data android:name="wakelock" android:value="0" />
+
+        <activity
+            android:name="org.kivy.android.PythonActivity"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|fontScale|uiMode|screenSize|smallestScreenSize|layoutDirection|density"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:process=":pythonservice"
+            android:screenOrientation="{{ args.orientation }}"
+            android:windowSoftInputMode="{{ args.window_soft_input_mode }}">
+
+            {% if args.icon %}
+            <meta-data android:name="android.app.icon" android:resource="@drawable/icon" />
+            {% endif %}
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            {{ args.intent_filters }}
+            {{ args.meta_data }}
+        </activity>
+
+        {% if args.ouya_main %}
+        <activity
+            android:name="tv.ouya.console.api.OuyaActivity"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|fontScale|uiMode|screenSize|smallestScreenSize|layoutDirection|density"
+            android:exported="true"
+            android:screenOrientation="{{ args.orientation }}"
+            android:windowSoftInputMode="{{ args.window_soft_input_mode }}">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="tv.ouya.intent.category.APP" />
+            </intent-filter>
+        </activity>
+        {% endif %}
+
+        {% if args.service %}
+        <service android:name="{{ args.service }}" android:process=":pythonservice" />
+        {% endif %}
+
+        <!-- TiShou 自定义服务（注入在 <application> 内部，AAPT 兼容） -->
+        <service
+            android:name="org.tishou.accessibility.TiShouAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+        <service
+            android:name="org.tishou.service.KeepAliveService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+    </application>
+
+</manifest>

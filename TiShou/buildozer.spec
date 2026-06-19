@@ -147,9 +147,8 @@ android.vibrate = True
 # (str) p4a 引导模式
 # android.bootstrap = sdl2
 
-# (str) 额外 AndroidManifest.xml 配置（指向独立 XML 文件）
-# 注册无障碍服务 + 前台保活服务
-android.extra_manifest_xml = extra_manifest.xml
+# (str) 自定义 AndroidManifest 模板（将 service 声明注入 <application> 内部）
+android.manifest.template = AndroidManifest.tmpl.xml
 
 #
 # ─────────────────────────────────────────────────────────────
