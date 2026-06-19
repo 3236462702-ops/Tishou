@@ -1442,7 +1442,7 @@ class MainSettingsScreen(Screen):
         config = ConfigManager()
         timeout = config.get("ocr_timeout", 8.0)
         scale = config.get("ocr_image_scale", 1.3)
-        delay = config.get("order_judge_delay", 5.0)
+        delay = config.get("order_judge_delay", 13.0)
 
         timeout_input = TextInput(
             text=str(timeout), font_size=dp_to_px(15),

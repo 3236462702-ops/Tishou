@@ -75,7 +75,7 @@ DEFAULT_IMAGE_SCALE = 1.3
 OCR_TIMEOUT = 8
 
 # 订单判定延迟（秒）
-DEFAULT_JUDGE_DELAY = 5
+DEFAULT_JUDGE_DELAY = 13.0
 
 # 截图缓存目录
 CAPTURE_DIR = os.path.join(PROJECT_DIR, "captures")
