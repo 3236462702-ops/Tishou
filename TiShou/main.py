@@ -380,6 +380,7 @@ class TiShouApp:
         # ---- 当前启动阶段 ----
         self._stage = StartupStage.INIT
         self._stage_errors: Dict[str, str] = {}
+        self._requested_permissions: set = set()  # 已申请过的权限，避免重复跳转
 
         # ---- 模块缓存 ----
         self._modules: Dict[str, Any] = {}
@@ -420,25 +421,25 @@ class TiShouApp:
 
             # ---- 第1步：初始化基础 ----
             self._stage = StartupStage.INIT
-            self._on_stage_start("初始化日志与配置")
+            self._on_stage_start("初始化日志与配置", progress=5.0)
             self._init_debug_mode()
             self._on_stage_end("初始化日志与配置")
 
             # ---- 第2步：网络检测 ----
             self._stage = StartupStage.NETWORK_CHECK
-            self._on_stage_start("网络连通性检测")
+            self._on_stage_start("网络连通性检测", progress=15.0)
             network_ok = self._check_network()
             self._on_stage_end("网络连通性检测", ok=network_ok)
 
             # ---- 第3步：权限检测 ----
             self._stage = StartupStage.PERMISSION_CHECK
-            self._on_stage_start("安卓权限检测")
+            self._on_stage_start("安卓权限检测", progress=25.0)
             perm_ok = self._check_permissions()
             self._on_stage_end("安卓权限检测", ok=perm_ok)
 
             # ---- 第4步：免责声明 ----
             self._stage = StartupStage.DISCLAIMER
-            self._on_stage_start("免责声明")
+            self._on_stage_start("免责声明", progress=35.0)
 
             # 第4步在 UI 中由用户交互完成，此处只设置初始状态
             eula_accepted = self._config.get("eula_accepted", False)
@@ -450,7 +451,7 @@ class TiShouApp:
 
             # ---- 第5步：卡密验证 ----
             self._stage = StartupStage.ACTIVATION
-            self._on_stage_start("卡密验证")
+            self._on_stage_start("卡密验证", progress=45.0)
 
             activated = self._check_activation()
             if not activated:
@@ -461,14 +462,14 @@ class TiShouApp:
 
             # ---- 第6步：资源加载 ----
             self._stage = StartupStage.RESOURCE_LOAD
-            self._on_stage_start("核心模块加载")
+            self._on_stage_start("核心模块加载", progress=60.0)
             modules_ok = self._load_modules()
             self._on_stage_end("核心模块加载", ok=modules_ok)
 
             # OCR 模型加载单独汇报进度（首次加载约需 30-60 秒）
             if modules_ok:
                 self._stage = StartupStage.OCR_LOAD
-                self._on_stage_start("OCR 识别模型加载（首次较慢，请耐心等待）")
+                self._on_stage_start("OCR 识别模型加载（首次较慢，请耐心等待）", progress=70.0)
                 ocr_ok = self._load_ocr()
                 self._on_stage_end("OCR 识别模型加载", ok=ocr_ok)
             else:
@@ -476,13 +477,13 @@ class TiShouApp:
 
             # ---- 第7步：素材更新检测 ----
             self._stage = StartupStage.MATERIAL_UPDATE
-            self._on_stage_start("素材更新检测")
+            self._on_stage_start("素材更新检测", progress=80.0)
             self._check_material_update()
             self._on_stage_end("素材更新检测")
 
             # ---- 第8步：启动后台服务 ----
             self._stage = StartupStage.SERVICES_START
-            self._on_stage_start("后台服务启动")
+            self._on_stage_start("后台服务启动", progress=90.0)
             self._start_background_services()
             self._on_stage_end("后台服务启动")
 
@@ -662,7 +663,7 @@ class TiShouApp:
 
                 # 逐模块上报进度：resource_load 阶段 60%~68%（9 个模块各约 0.9%）
                 sub_progress = 60 + int((idx / total) * 8)
-                self._on_stage_start(f"加载模块: {mod_name}")
+                self._on_stage_start(f"加载模块: {mod_name}", progress=float(sub_progress))
 
                 mod = ModuleLoader.load(mod_name)
                 if mod:
@@ -701,7 +702,7 @@ class TiShouApp:
 
                 # 逐模块上报进度：resource_load 阶段后段 68%~72%
                 sub_progress = 68 + int((idx / len(init_steps)) * 4)
-                self._on_stage_start(f"初始化: {display_name}")
+                self._on_stage_start(f"初始化: {display_name}", progress=float(sub_progress))
 
                 if mod_key == "material_update":
                     auto_update = self._config.get("material_auto_update", True)
@@ -733,6 +734,10 @@ class TiShouApp:
             def _on_perm_progress(perm_key, status):
                 display = _PERM_DISPLAY.get(perm_key, perm_key)
                 if status == "requesting":
+                    if perm_key in self._requested_permissions:
+                        # 已申请过，跳过重复跳转
+                        return
+                    self._requested_permissions.add(perm_key)
                     if perm_key in SPECIAL_PERMISSIONS:
                         self._on_stage_start(f"请开启: {display}（将跳转系统设置）")
                     else:
@@ -1097,24 +1102,31 @@ class TiShouApp:
         """注销启动进度回调"""
         self._progress_callbacks.pop(name, None)
 
-    def _on_stage_start(self, stage_name: str):
-        """阶段开始回调"""
-        self._logger.info(f"▶ {stage_name}...")
+    def _on_stage_start(self, stage_name: str, progress: float = None):
+        """阶段开始回调
+        :param stage_name: 阶段/步骤名称
+        :param progress: 可选，直接指定进度百分比（0-100），若为 None 则让 UI 根据 stage 计算
+        """
+        self._logger.info(f"▶ {stage_name}..." + (f" ({progress:.0f}%)" if progress is not None else ""))
         for cb in self._progress_callbacks.values():
             try:
-                cb(self._stage, stage_name, "start", None)
+                cb(self._stage, stage_name, "start", None, progress)
             except Exception:
                 pass
 
-    def _on_stage_end(self, stage_name: str, ok: bool = True):
-        """阶段结束回调"""
+    def _on_stage_end(self, stage_name: str, ok: bool = True, progress: float = None):
+        """阶段结束回调
+        :param stage_name: 阶段/步骤名称
+        :param ok: 是否成功
+        :param progress: 可选，直接指定进度百分比
+        """
         status = "✓" if ok else "✗"
         self._logger.info(f"  {status} {stage_name}")
         if not ok:
             self._stage_errors[stage_name] = f"{stage_name} 完成但状态异常"
         for cb in self._progress_callbacks.values():
             try:
-                cb(self._stage, stage_name, "end", ok)
+                cb(self._stage, stage_name, "end", ok, progress)
             except Exception:
                 pass
 

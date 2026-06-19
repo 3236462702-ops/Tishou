@@ -1004,20 +1004,30 @@ class PermissionManager:
 
     # ---------- 无障碍服务申请 ----------
     def _request_accessibility_service(self) -> bool:
+        """
+        申请无障碍服务权限
+        使用 ACTION_ACCESSIBILITY_DETAILS_SETTINGS 直接跳转到本应用无障碍设置详情页，
+        避免用户需要在一长串列表中手动查找应用。
+        """
         try:
             from jnius import autoclass
             PythonActivity = autoclass("org.kivy.android.PythonActivity")
             Intent = autoclass("android.content.Intent")
+            Settings = autoclass("android.provider.Settings")
+            Uri = autoclass("android.net.Uri")
             activity = PythonActivity.mActivity
             if not activity:
                 return False
-            intent = Intent("android.settings.ACCESSIBILITY_SETTINGS")
+
+            pkg = activity.getPackageName()
+            intent = Intent(Settings.ACTION_ACCESSIBILITY_DETAILS_SETTINGS)
+            intent.setData(Uri.parse("package:" + pkg))
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
-            self._logger.info("已跳转无障碍设置页，请手动开启 TiShou 无障碍服务")
+            self._logger.info(f"已跳转无障碍详情设置页（包名: {pkg}）")
             return True
         except Exception as e:
-            self._logger.error(f"跳转无障碍设置页失败: {e}")
+            self._logger.error(f"跳转无障碍详情页失败: {e}")
             return self._open_app_settings_fallback()
 
     # ---------- 屏幕录制权限申请 ----------

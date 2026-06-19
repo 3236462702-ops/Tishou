@@ -347,16 +347,19 @@ class TiShouUI:
 
                         from kivy.clock import Clock
 
-                        def _progress_cb(stage, name, event, ok):
-                            """冷启动阶段回调 → 更新 LoadingScreen"""
+                        def _progress_cb(stage, name, event, ok, progress=None):
+                            """冷启动阶段回调 → 更新 LoadingScreen
+                            :param progress: 可选，直接指定进度百分比（0-100），
+                                             若为 None 则只更新状态文字不改变进度
+                            """
                             def _update(dt):
                                 try:
                                     loading = self._get_loading_screen()
                                     if loading:
-                                        loading._update_progress(
-                                            self._calc_stage_progress(stage),
-                                            name
-                                        )
+                                        if progress is not None:
+                                            loading._update_progress(progress, name)
+                                        elif name:
+                                            loading._update_status_text(name)
                                 except Exception:
                                     pass
                             try:
@@ -718,6 +721,9 @@ class DisclaimerScreen(Screen):
             from kivy.uix.image import Image
             from kivy.core.window import Window
 
+            _ensure_cjk_font()
+            cjk_font = _get_cjk_font_name()
+
             root = BoxLayout(orientation="vertical", padding=24, spacing=20)
             theme = get_theme_manager()
             bg = theme.page_bg()
@@ -738,6 +744,7 @@ class DisclaimerScreen(Screen):
                 color=hex_to_rgba(theme.text_primary()),
                 size_hint_y=None,
                 height=dp_to_px(60),
+                font_name=cjk_font,
             )
             root.add_widget(title)
 
@@ -752,6 +759,7 @@ class DisclaimerScreen(Screen):
                 text_size=(Window.width - dp_to_px(48), None),
                 size_hint_y=None,
                 padding=(dp_to_px(16), dp_to_px(16)),
+                font_name=cjk_font,
             )
             eula_label.bind(
                 texture_size=lambda inst, val: setattr(inst, "height", val[1] + dp_to_px(32))
@@ -843,6 +851,9 @@ class ActivationScreen(Screen):
             from kivy.uix.button import Button
             from kivy.core.window import Window
 
+            _ensure_cjk_font()
+            cjk_font = _get_cjk_font_name()
+
             root = BoxLayout(orientation="vertical", padding=32, spacing=20)
             theme = get_theme_manager()
             bg = theme.page_bg()
@@ -862,6 +873,7 @@ class ActivationScreen(Screen):
                 color=hex_to_rgba(theme.text_primary()),
                 size_hint_y=None,
                 height=dp_to_px(60),
+                font_name=cjk_font,
             )
             root.add_widget(title)
 
@@ -872,6 +884,7 @@ class ActivationScreen(Screen):
                 color=hex_to_rgba(theme.text_secondary()),
                 size_hint_y=None,
                 height=dp_to_px(30),
+                font_name=cjk_font,
             )
             root.add_widget(desc)
 
@@ -994,6 +1007,57 @@ class ActivationScreen(Screen):
 # ============================================================
 # ③ 加载进度页
 # ============================================================
+
+# CJK 字体缓存
+_cjk_font_name = None
+_cjk_font_registered = False
+
+
+def _ensure_cjk_font():
+    """
+    确保注册了支持中文的 CJK 字体。
+    Kivy 默认使用 Roboto 字体，不含中文字符，导致中文显示为方块/乱码。
+    在 Android 上尝试使用系统 DroidSansFallback.ttf 中文字体。
+    """
+    global _cjk_font_name, _cjk_font_registered
+    if _cjk_font_registered:
+        return
+
+    _cjk_font_registered = True
+    try:
+        from kivy.core.text import LabelBase
+        import os
+
+        # Android 系统 CJK 字体路径列表
+        cjk_paths = [
+            "/system/fonts/DroidSansFallback.ttf",
+            "/system/fonts/NotoSansCJK-Regular.ttc",
+            "/system/fonts/NotoSansSC-Regular.otf",
+            "/system/fonts/NotoSansHans-Regular.otf",
+            "/system/fonts/Fallback.ttf",
+        ]
+
+        for path in cjk_paths:
+            if os.path.isfile(path):
+                try:
+                    LabelBase.register(name="CJKFont", fn_regular=path)
+                    _cjk_font_name = "CJKFont"
+                    return
+                except Exception:
+                    continue
+
+        # 如果系统字体都不存在，尝试使用 Kivy 内置字体（可能支持部分 CJK）
+        _cjk_font_name = None
+    except Exception:
+        _cjk_font_name = None
+
+
+def _get_cjk_font_name():
+    """获取 CJK 字体名称，若未注册则返回 None（使用默认字体）"""
+    _ensure_cjk_font()
+    return _cjk_font_name
+
+
 class LoadingSpinner(Widget):
     """
     旋转加载动画圈（追光点效果）
@@ -1087,7 +1151,12 @@ class LoadingScreen(Screen):
             from kivy.uix.boxlayout import BoxLayout
             from kivy.uix.label import Label
             from kivy.uix.widget import Widget
+            from kivy.uix.floatlayout import FloatLayout
             from kivy.core.window import Window
+            from kivy.core.text import LabelBase
+
+            # 注册 CJK 字体，解决中文字符显示为方块/乱码的问题
+            _ensure_cjk_font()
 
             root = BoxLayout(orientation="vertical", padding=32, spacing=16)
             theme = get_theme_manager()
@@ -1110,32 +1179,36 @@ class LoadingScreen(Screen):
                 color=hex_to_rgba(theme.text_primary()),
                 size_hint_y=None,
                 height=dp_to_px(50),
+                font_name=_get_cjk_font_name(),
             )
             root.add_widget(self._title_label)
 
-            # 旋转动画圈（视觉上持续运动，不会感觉卡住）
-            spinner_box = BoxLayout(
-                orientation="horizontal",
+            # 旋转动画圈 + 模块名称（模块名浮在圈的正中央）
+            spinner_container = FloatLayout(
                 size_hint_y=None,
-                height=dp_to_px(80),
+                height=dp_to_px(120),
             )
-            spinner_box.add_widget(BoxLayout(size_hint_x=0.35))
             self._spinner = LoadingSpinner(
-                size_hint=(0.3, 1),
+                size_hint=(0.6, 0.7),
+                pos_hint={"center_x": 0.5, "center_y": 0.5},
             )
-            spinner_box.add_widget(self._spinner)
-            spinner_box.add_widget(BoxLayout(size_hint_x=0.35))
-            root.add_widget(spinner_box)
+            spinner_container.add_widget(self._spinner)
 
-            # 状态文字
+            # 状态文字（浮在旋转圈正中央）
             self._status_label = Label(
                 text="请稍候",
-                font_size=dp_to_px(15),
+                font_size=dp_to_px(14),
                 color=hex_to_rgba(theme.text_secondary()),
-                size_hint_y=None,
+                size_hint=(None, None),
+                width=dp_to_px(200),
                 height=dp_to_px(30),
+                pos_hint={"center_x": 0.5, "center_y": 0.5},
+                halign="center",
+                valign="middle",
+                font_name=_get_cjk_font_name(),
             )
-            root.add_widget(self._status_label)
+            spinner_container.add_widget(self._status_label)
+            root.add_widget(spinner_container)
 
             # 进度条容器
             bar_box = BoxLayout(
@@ -1161,6 +1234,7 @@ class LoadingScreen(Screen):
                 color=hex_to_rgba(StyleConstants.ACCENT_COLOR),
                 size_hint_y=None,
                 height=dp_to_px(50),
+                font_name=_get_cjk_font_name(),
             )
             root.add_widget(self._percent_label)
 
@@ -1288,6 +1362,15 @@ class LoadingScreen(Screen):
         except Exception:
             pass
 
+    def _update_status_text(self, text):
+        """仅更新状态文字，不改变进度条"""
+        try:
+            if self._status_label and text:
+                self._status_base_text = text
+                self._status_label.text = text
+        except Exception:
+            pass
+
     def _do_update_progress(self, value, text=""):
         """在主线程更新UI"""
         try:
@@ -1393,6 +1476,7 @@ class MainSettingsScreen(Screen):
                 color=hex_to_rgba(theme.text_secondary()),
                 halign="center",
                 valign="middle",
+                font_name=_get_cjk_font_name(),
             )
             self.add_widget(self._placeholder_label)
         except Exception:
