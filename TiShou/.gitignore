@@ -1,0 +1,43 @@
+# TiShou .gitignore
+# ============================================
+
+# OCR 离线模型文件（不提交 Git，每次构建时单独下载）
+models/
+*.pth
+
+# Buildozer 构建产物
+.buildozer/
+bin/
+*.apk
+*.aab
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+
+# 截图缓存
+captures/
+*.png
+*.jpg
+!assets/*.png
+!assets/*.jpg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+logs/
+
+# Docker
+docker_build_apk.ps1

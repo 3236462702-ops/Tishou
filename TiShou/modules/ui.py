@@ -1070,8 +1070,8 @@ class LoadingSpinner(Widget):
         super().__init__(**kwargs)
         self._phase = 0.0
         self._anim_event = None
-        self._num_dots = 8
-        self._dot_radius = 5
+        self._num_dots = 12
+        self._dot_radius = 7
         self.bind(pos=self._draw, size=self._draw)
 
     def start(self):
@@ -1158,7 +1158,7 @@ class LoadingScreen(Screen):
             # 注册 CJK 字体，解决中文字符显示为方块/乱码的问题
             _ensure_cjk_font()
 
-            root = BoxLayout(orientation="vertical", padding=32, spacing=16)
+            root = BoxLayout(orientation="vertical", padding=32, spacing=24)
             theme = get_theme_manager()
             bg = theme.page_bg()
             r, g, b, a = hex_to_rgba(bg)
@@ -1169,7 +1169,9 @@ class LoadingScreen(Screen):
                 root.bind(pos=lambda w, v: setattr(rect, "pos", v))
                 root.bind(size=lambda w, v: setattr(rect, "size", v))
 
-            root.add_widget(BoxLayout())  # 顶部弹性占位
+            # 顶部留白（标题靠上但不贴顶）
+            top_spacer = BoxLayout(size_hint_y=None, height=dp_to_px(40))
+            root.add_widget(top_spacer)
 
             # 标题
             self._title_label = Label(
@@ -1183,7 +1185,10 @@ class LoadingScreen(Screen):
             )
             root.add_widget(self._title_label)
 
-            # 状态文字（模块名称，显示在进度条上方）
+            # 标题与状态文字之间的间隔
+            root.add_widget(BoxLayout(size_hint_y=None, height=dp_to_px(12)))
+
+            # 状态文字（模块名称，居中显示）
             self._status_label = Label(
                 text="请稍候",
                 font_size=dp_to_px(14),
@@ -1212,13 +1217,16 @@ class LoadingScreen(Screen):
             bar_box.add_widget(BoxLayout(size_hint_x=0.1))
             root.add_widget(bar_box)
 
+            # 进度条与旋转圈之间的间隔
+            root.add_widget(BoxLayout(size_hint_y=None, height=dp_to_px(16)))
+
             # 旋转圈 + 百分比（圈套在百分比外面，百分比浮在圈正中央）
             percent_container = FloatLayout(
                 size_hint_y=None,
-                height=dp_to_px(160),
+                height=dp_to_px(240),
             )
             self._spinner = LoadingSpinner(
-                size_hint=(0.7, 0.8),
+                size_hint=(0.8, 0.85),
                 pos_hint={"center_x": 0.5, "center_y": 0.5},
             )
             percent_container.add_widget(self._spinner)

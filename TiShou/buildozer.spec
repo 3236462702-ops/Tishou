@@ -45,15 +45,18 @@ package.domain = org.tishou
 # (str) 源代码目录（main.py 所在位置）
 source.dir = .
 
-# (list) 包含的源文件扩展名
-source.include_exts = py,png,jpg,kv,atlas,ttf,conf,json,ini
+# (list) 包含的源文件扩展名（pth = PyTorch 模型权重）
+source.include_exts = py,png,jpg,kv,atlas,ttf,conf,json,ini,pth
+
+# (list) 需要包含的额外文件/目录模式
+source.include_patterns = models/*.pth
 
 # (list) 排除的源文件/目录
 source.exclude_dirs = __pycache__,.git,.idea,.trae,logs,venv,tests
 source.exclude_patterns = *.log,*.pyc,*.pyo
 
 # (str) 应用版本号
-version = 1.0.0
+version = 1.0.1
 
 # ═══════════════════════════════════════════════════════════════
 # 依赖清单（由 python-for-android 编译）

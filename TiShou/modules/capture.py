@@ -37,6 +37,11 @@ from modules.utils import (
     PROJECT_DIR, ASSETS_DIR,
 )
 
+# 离线模型目录（EasyOCR 模型文件存放位置）
+# 本地开发：TiShou/models/（由 download_ocr_models.py 下载）
+# Android APK：随 APK 打包到应用私有目录
+MODELS_DIR = os.path.join(PROJECT_DIR, "models")
+
 
 # ============================================================
 # 常量
@@ -260,14 +265,14 @@ class EasyOcrEngine:
                 # 关键参数：
                 # - lang_list=["ch_sim"]  仅加载简体中文
                 # - gpu=False             禁用 GPU（纯 CPU 识别）
-                # - download_enabled=False 关闭自动更新/下载
-                # - model_storage_directory 指定安卓可写路径
-                ensure_dir(ASSETS_DIR)
+                # - download_enabled=False 关闭自动下载（使用本地离线模型）
+                # - model_storage_directory 指定本地模型目录
+                ensure_dir(MODELS_DIR)
                 self._reader = easyocr.Reader(
                     lang_list=["ch_sim"],
                     gpu=False,
                     download_enabled=False,
-                    model_storage_directory=ASSETS_DIR,
+                    model_storage_directory=MODELS_DIR,
                     verbose=False,
                 )
                 self._loaded = True

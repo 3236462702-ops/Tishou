@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.3.0
-# 生成日期：2026-06-19
-# 更新内容：全部存储权限(MANAGE_EXTERNAL_STORAGE) + OCR异步加载不卡主线程 + 旋转圈套百分比
+# 版本：v2.3.1
+# 生成日期：2026-06-20
+# 更新内容：EasyOCR离线模型部署 + 加载页圈套百分比 + 三元素分散布局
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -32,7 +32,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.3.0" -ForegroundColor Cyan
+Write-Host "  版本: v2.3.1" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
