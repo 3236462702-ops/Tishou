@@ -960,7 +960,7 @@ class TiShouApp:
 
             # 启动 UI（这通常会阻塞到 UI 退出）
             self._logger.info("正在启动 Kivy 界面...")
-            ui_mod.run_ui()
+            ui_mod.run_ui(biz_app=self)
             return True
         except Exception as e:
             self._error_logger.error(f"UI 启动失败: {e}\n{traceback.format_exc()}")

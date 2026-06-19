@@ -211,7 +211,7 @@ class TiShouUI:
     每页全量异常防护，销毁立即释放资源。
     """
 
-    def __init__(self):
+    def __init__(self, biz_app=None):
         self._logger = LogManager.get_logger("app")
         self._error_logger = LogManager.get_logger("error")
         self._config = ConfigManager()
@@ -219,6 +219,7 @@ class TiShouUI:
         self._app = None
         self._screen_manager = None
         self._widgets_cache = {}
+        self._biz_app = biz_app
 
     # ----------------------------------------------------------
     # Kivy 配置
@@ -315,22 +316,34 @@ class TiShouUI:
                 def _cold_start_runner(self):
                     """
                     后台冷启动线程：
-                    1. 注册进度回调到 TiShouApp（业务逻辑）
-                    2. 调用 biz_app.start()
-                    3. 完成后切换到对应页面
-                    4. 触发权限申请流程
+                    1. 获取 biz_app 实例（优先使用传入的引用）
+                    2. 注册进度回调到 TiShouApp（业务逻辑）
+                    3. 调用 biz_app.start()
+                    4. 完成后切换到对应页面
+                    5. 触发权限申请流程
                     """
                     try:
-                        # ---- 获取业务 App 单例（使用 __main__ 避免重复导入 main.py） ----
-                        import sys as _sys
-                        _main_mod = _sys.modules.get("__main__")
-                        if _main_mod and hasattr(_main_mod, "get_app"):
-                            biz_app = _main_mod.get_app()
+                        # ---- 获取业务 App 单例 ----
+                        biz_app = None
+                        # 优先使用传入的引用（最可靠，避免 __main__ 问题）
+                        _outer = self._outer()
+                        if _outer and hasattr(_outer, "_biz_app") and _outer._biz_app is not None:
+                            biz_app = _outer._biz_app
                         else:
-                            # 兜底：如果 __main__ 中没有 get_app，尝试导入
-                            _sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-                            from main import get_app as _get_app
-                            biz_app = _get_app()
+                            # 兜底：尝试从 __main__ 获取
+                            import sys as _sys
+                            _main_mod = _sys.modules.get("__main__")
+                            if _main_mod and hasattr(_main_mod, "get_app"):
+                                biz_app = _main_mod.get_app()
+                            else:
+                                # 最后兜底：导入 main 模块
+                                _sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+                                from main import get_app as _get_app
+                                biz_app = _get_app()
+
+                        if biz_app is None:
+                            self._log_error("无法获取 biz_app 实例，冷启动中止")
+                            return
 
                         from kivy.clock import Clock
 
@@ -981,14 +994,73 @@ class ActivationScreen(Screen):
 # ============================================================
 # ③ 加载进度页
 # ============================================================
+class LoadingSpinner(Widget):
+    """
+    旋转加载动画圈（追光点效果）
+    =========================
+    8 个点环形排列，持续旋转 + 渐隐效果，视觉上永不"卡住"。
+    纯 Canvas 绘制，性能开销极低。
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._phase = 0.0
+        self._anim_event = None
+        self._num_dots = 8
+        self._dot_radius = 5
+        self.bind(pos=self._draw, size=self._draw)
+
+    def start(self):
+        from kivy.clock import Clock
+        if self._anim_event is None:
+            self._anim_event = Clock.schedule_interval(self._update, 1.0 / 30.0)
+
+    def stop(self):
+        if self._anim_event:
+            self._anim_event.cancel()
+            self._anim_event = None
+
+    def _update(self, dt):
+        self._phase = (self._phase + dt * 2.0) % 1.0
+        self._draw()
+
+    def _draw(self, *args):
+        import math
+        from kivy.graphics import Color, Ellipse
+
+        self.canvas.clear()
+        w, h = self.width, self.height
+        if w <= 0 or h <= 0:
+            return
+
+        cx = w / 2.0
+        cy = h / 2.0
+        outer_r = min(w, h) / 2.0 - 4
+        d2 = self._dot_radius * 2
+
+        for i in range(self._num_dots):
+            angle = (float(i) / self._num_dots + self._phase) * 2.0 * math.pi
+            # 渐隐：最亮→最暗→最亮，循环
+            alpha = 0.12 + 0.88 * (0.5 + 0.5 * math.cos((float(i) / self._num_dots + self._phase) * 2.0 * math.pi))
+            x = cx + outer_r * math.cos(angle) - self._dot_radius
+            y = cy + outer_r * math.sin(angle) - self._dot_radius
+
+            with self.canvas:
+                Color(0.0, 0.48, 1.0, float(alpha))
+                Ellipse(pos=(x, y), size=(d2, d2))
+
+
 class LoadingScreen(Screen):
     """
-    加载进度页——圆角进度条+百分比，不可手动跳过
-    =============================================
+    加载进度页——圆角进度条+百分比+旋转动画，不可手动跳过
+    =====================================================
     改进特性：
-      1. on_enter 自动启动占位动画（不依赖外部调用）
-      2. 15 秒无冷启动更新 → 显示超时提示但不阻塞
-      3. 后台 _cold_start_done 标记 + 兜底跳转
+      1. 旋转追光动画圈（LoadingSpinner）——视觉上持续运动，不会"卡住"
+      2. 状态文字跳动省略号（".", "..", "..."）——动态变化
+      3. 百分比脉冲缩放——轻微呼吸效果
+      4. on_enter 自动启动占位动画（不依赖外部调用）
+      5. 15 秒无冷启动更新 → 显示超时提示但不阻塞
+      6. 后台 _cold_start_done 标记 + 兜底跳转
     """
 
     # 冷启动超时（秒）→ 显示提示但仍等待
@@ -1000,10 +1072,14 @@ class LoadingScreen(Screen):
         self._percent_label = None
         self._status_label = None
         self._title_label = None
+        self._spinner = None
         self._loading = False
         self._cold_start_done = False
         self._fallback_triggered = False
         self._real_progress_received = False  # 真实进度接管标记
+        self._dot_anim_event = None  # 状态文字跳动事件
+        self._pulse_anim_event = None  # 百分比脉冲事件
+        self._status_base_text = "请稍候"  # 状态文字基础文本
         self._build_ui()
 
     def _build_ui(self):
@@ -1037,9 +1113,23 @@ class LoadingScreen(Screen):
             )
             root.add_widget(self._title_label)
 
+            # 旋转动画圈（视觉上持续运动，不会感觉卡住）
+            spinner_box = BoxLayout(
+                orientation="horizontal",
+                size_hint_y=None,
+                height=dp_to_px(80),
+            )
+            spinner_box.add_widget(BoxLayout(size_hint_x=0.35))
+            self._spinner = LoadingSpinner(
+                size_hint=(0.3, 1),
+            )
+            spinner_box.add_widget(self._spinner)
+            spinner_box.add_widget(BoxLayout(size_hint_x=0.35))
+            root.add_widget(spinner_box)
+
             # 状态文字
             self._status_label = Label(
-                text="请稍候…",
+                text="请稍候",
                 font_size=dp_to_px(15),
                 color=hex_to_rgba(theme.text_secondary()),
                 size_hint_y=None,
@@ -1085,16 +1175,72 @@ class LoadingScreen(Screen):
         self.start_loading()
 
     def start_loading(self):
-        """开始加载（含占位动画 + 冷启动超时兜底）"""
+        """开始加载（含动画圈 + 占位动画 + 冷启动超时兜底）"""
         if self._loading:
             return
         self._loading = True
+
+        # 启动旋转动画圈
+        if self._spinner:
+            self._spinner.start()
+
+        # 启动状态文字跳动省略号动画
+        self._start_dot_animation()
+
+        # 启动百分比脉冲动画
+        self._start_pulse_animation()
 
         # 启动占位动画线程（每 2 秒增加一些进度，直到冷启动接管）
         threading.Thread(target=self._placeholder_anim, daemon=True).start()
 
         # 启动超时兜底线程
         threading.Thread(target=self._timeout_fallback, daemon=True).start()
+
+    def _start_dot_animation(self):
+        """状态文字跳动省略号动画（".", "..", "..."）"""
+        try:
+            from kivy.clock import Clock
+            self._dot_frame = 0
+
+            def _animate_dots(dt):
+                if not self._loading:
+                    return False
+                try:
+                    self._dot_frame = (self._dot_frame + 1) % 4
+                    dots = "." * self._dot_frame
+                    if hasattr(self, "_status_label") and self._status_label:
+                        current = self._status_label.text
+                        base = getattr(self, "_status_base_text", "请稍候")
+                        if current.startswith(base):
+                            self._status_label.text = base + dots
+                except Exception:
+                    pass
+
+            self._dot_anim_event = Clock.schedule_interval(_animate_dots, 0.5)
+        except Exception:
+            pass
+
+    def _start_pulse_animation(self):
+        """百分比脉冲缩放动画（呼吸效果）"""
+        try:
+            from kivy.clock import Clock
+            self._pulse_phase = 0.0
+
+            def _animate_pulse(dt):
+                if not self._loading:
+                    return False
+                try:
+                    self._pulse_phase += dt * 2.5
+                    import math
+                    scale = 1.0 + 0.04 * math.sin(self._pulse_phase)
+                    if hasattr(self, "_percent_label") and self._percent_label:
+                        self._percent_label.font_size = dp_to_px(32) * scale
+                except Exception:
+                    pass
+
+            self._pulse_anim_event = Clock.schedule_interval(_animate_pulse, 1/30)
+        except Exception:
+            pass
 
     def _placeholder_anim(self):
         """
@@ -1109,7 +1255,7 @@ class LoadingScreen(Screen):
                 # 检查真实进度是否已接管（>30% 说明冷启动已开始汇报进度）
                 if self._real_progress_received:
                     break
-                self._update_progress(progress, "正在准备…")
+                self._update_progress(progress, "正在准备")
                 progress += 3
                 time.sleep(1.5)
         except Exception:
@@ -1150,6 +1296,8 @@ class LoadingScreen(Screen):
             if self._percent_label:
                 self._percent_label.text = f"{int(value)}%"
             if self._status_label and text:
+                # 更新基础文本（跳动动画会在后面加省略号）
+                self._status_base_text = text
                 self._status_label.text = text
             # 真实冷启动进度到达（>30%）→ 停掉占位动画
             if value > 30:
@@ -2023,10 +2171,13 @@ def _is_android() -> bool:
 # 对外便捷接口
 # ============================================================
 
-def run_ui():
-    """启动 UI（外部入口）"""
+def run_ui(biz_app=None):
+    """启动 UI（外部入口）
+    
+    :param biz_app: TiShouApp 业务逻辑实例（由 main.py 传入）
+    """
     try:
-        ui = TiShouUI()
+        ui = TiShouUI(biz_app=biz_app)
         ui.run()
     except Exception as e:
         LogManager.get_logger("error").error(f"UI 启动失败: {e}")

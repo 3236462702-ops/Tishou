@@ -757,7 +757,7 @@ class CaptureManager:
         return {
             "active_engine": self._active_engine,
             "preferred_engine": self._preferred_engine,
-            "easyocr_ready": self._get_easyocr().is_ready if self._easyocr_engine else False,
+            "easyocr_ready": self._easyocr_engine._loaded if self._easyocr_engine else False,
             "accessibility_available": (
                 self._get_accessibility().is_available
                 if self._accessibility_engine else False
