@@ -147,24 +147,9 @@ android.vibrate = True
 # (str) p4a 引导模式
 # android.bootstrap = sdl2
 
-# (str) 额外 AndroidManifest.xml 配置（注入到 <application> 标签内）
-# 注册无障碍服务 + 前台保活服务（Android 14+ foregroundServiceType）
-android.extra_manifest_xml = \
-    <service \
-        android:name="org.tishou.accessibility.TiShouAccessibilityService" \
-        android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" \
-        android:exported="true"> \
-        <intent-filter> \
-            <action android:name="android.accessibilityservice.AccessibilityService" /> \
-        </intent-filter> \
-        <meta-data \
-            android:name="android.accessibilityservice" \
-            android:resource="@xml/accessibility_service_config" /> \
-    </service> \
-    <service \
-        android:name="org.tishou.service.KeepAliveService" \
-        android:exported="false" \
-        android:foregroundServiceType="specialUse" />
+# (str) 额外 AndroidManifest.xml 配置（指向独立 XML 文件）
+# 注册无障碍服务 + 前台保活服务
+android.extra_manifest_xml = extra_manifest.xml
 
 #
 # ─────────────────────────────────────────────────────────────
