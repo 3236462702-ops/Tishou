@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
     "ocr_poll_interval": 2.0,
     "ocr_timeout": 8.0,
     "ocr_image_scale": 1.3,
-    "order_judge_delay": 5.0,
+    "order_judge_delay": 13.0,
     "filter_thresholds": {
         "min_price": 0.0,
         "max_price": 999999.0,

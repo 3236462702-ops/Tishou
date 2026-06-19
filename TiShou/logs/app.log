@@ -33,3 +33,4 @@
 [2026-06-15 19:05:18] [TiShou.app] [WARNING] 世界时间API 连接失败
 [2026-06-15 19:05:18] [TiShou.app] [WARNING] Taobao时间戳 连接失败
 [2026-06-15 19:05:19] [TiShou.app] [WARNING] API 全部失败，使用本地时间估算: 1781521519
+[2026-06-19 07:47:19] [TiShou.app] [WARNING] 已自动修复 3 个配置项（类型不匹配/异常值）

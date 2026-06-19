@@ -11,7 +11,7 @@ TiShou — 主入口（完整冷启动流程）
   6. 全代码异常捕获，杜绝闪退
   7. 分级日志（运行/错误/OCR/素材）
   8. easyocr + Pillow 纯本地 OCR
-  9. 抢单判定延迟默认 5s
+  9. 抢单判定延迟默认 13s
  10. HyperOS + iOS 融合风 UI
 
 冷启动顺序（严格分步）：
@@ -111,30 +111,31 @@ DEFAULT_CONFIG = {
     "ocr_poll_interval": 2.0,
     "ocr_timeout": 8.0,
     "ocr_image_scale": 1.3,
-    "order_judge_delay": 5.0,
-    "filter": {
-        "refresh_mode": "fixed",              # fixed | random
-        "refresh_interval": 3.0,             # 固定刷新间隔（秒）
-        "refresh_min": 2.0,                  # 随机最小间隔（秒）
-        "refresh_max": 8.0,                  # 随机最大间隔（秒）
-        "click_mode": "fixed",               # fixed | random
-        "click_interval": 1.0,               # 固定点击间隔（秒）
-        "click_min": 0.5,                    # 随机最小点击间隔（秒）
-        "click_max": 3.0,                    # 随机最大点击间隔（秒）
+    "order_judge_delay": 13.0,
+    "order_filter": {
         "min_price": 0.0,                    # 最低金额
         "max_price": 999999.0,               # 最高金额
-        "max_pickup_distance": 10.0,         # 接驾距离上限（km）
-        "min_mileage": 0.0,                  # 订单最低里程（km）
-        "max_mileage": 999999.0,             # 订单最高里程（km）
+        "min_pickup_dist": 0.0,              # 最小接驾距离（km）
+        "max_pickup_dist": 10.0,             # 最大接驾距离（km）
+        "min_order_dist": 20.0,              # 订单最低里程（km）
+        "max_order_dist": 999999.0,          # 订单最高里程（km）
         "min_unit_price": 1.0,               # 最低单价（元/km）
         "max_unit_price": 8.0,               # 最高单价（元/km）
-        "area_mode": "none",                 # none | whitelist | blacklist
-        "area_provinces": [],                # 省份列表（空=不限）
-        "area_cities": [],                   # 城市列表
-        "area_auto_locate": True,            # 是否自动定位
+        "keywords_include": [],              # 白名单关键词
+        "keywords_exclude": [],              # 黑名单关键词
         "order_types": ["fast", "express"],  # 选中的订单类型key列表
-        "keywords_include": [],              # 黑名单关键词
-        "keywords_exclude": [],              # 白名单关键词
+        "region_whitelist": [],              # 区域白名单
+        "region_blacklist": [],              # 区域黑名单
+        "use_whitelist": True,               # 是否使用白名单模式
+        "refresh_mode": "fixed",             # fixed | random
+        "refresh_fixed_min": 1.0,            # 固定刷新间隔最小值（秒）
+        "refresh_fixed_max": 3.0,            # 固定刷新间隔最大值（秒）
+        "refresh_random_min": 0.5,           # 随机刷新间隔最小值（秒）
+        "refresh_random_max": 5.0,           # 随机刷新间隔最大值（秒）
+        "click_mode": "fixed",               # fixed | random
+        "click_fixed_ms": 3000,              # 固定点击延迟（ms）
+        "click_random_min_ms": 1000,         # 随机点击延迟最小值（ms）
+        "click_random_max_ms": 8000,         # 随机点击延迟最大值（ms）
     },
     "float_window": {
         "width": 240,

@@ -236,6 +236,7 @@ class EasyOcrEngine:
         self._load_lock = threading.Lock()
         self._loaded = False
         self._load_error = ""
+        self._cache_dir = os.path.join(PROJECT_DIR, "captures")
 
         self._logger.info("easyocr 引擎已创建（等待首次调用时加载模型）")
 
@@ -1401,7 +1402,7 @@ def warmup_engine_ui() -> bool:
     """
     try:
         mgr = get_capture_manager()
-        engine = mgr.get_engine("easyocr")
+        engine = mgr._get_easyocr()
         if engine:
             return engine.warmup()
         return False
@@ -1418,7 +1419,7 @@ def shutdown_engine_ui():
     """
     try:
         mgr = get_capture_manager()
-        engine = mgr.get_engine("easyocr")
+        engine = mgr._get_easyocr()
         if engine:
             engine.shutdown()
     except Exception as e:
