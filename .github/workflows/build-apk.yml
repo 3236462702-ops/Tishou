@@ -1,50 +1,66 @@
 # =============================================================================
-# TiShou APK 自动打包工作流
+# TiShou APK 自动构建工作流
+# 版本：v2.0.0（全新构建，未沿用旧配置）
+# 生成日期：2026-06-19
 # =============================================================================
 # 触发方式：
 #   1. 推送 main 分支时自动构建
-#   2. 手动触发（Actions 页面点 Run workflow）
+#   2. 手动触发（Actions 页面 → Run workflow）
 #
 # 产物：
-#   - TiShou/bin/TiShou-*-debug.apk  （调试包，可直接安装）
+#   - TiShou/bin/TiShou-*-debug.apk（调试包，可直接安装）
 #
-# 使用步骤：
-#   1. 将本项目推送到 GitHub 仓库
-#   2. 进入 GitHub 仓库页面 → Actions → 点击 "Build Android APK"
-#   3. 等待约 30-60 分钟（首次需下载 SDK/NDK）
-#   4. 构建完成后，在 Workflow 运行结果页面下载 APK 附件
+# 构建环境：
+#   - 操作系统：Ubuntu 22.04
+#   - Python：3.11（必须与目标设备 Python 版本一致）
+#   - Java：JDK 17（Gradle 8.x 要求）
+#   - 构建工具：buildozer + python-for-android
 #
-# 注意：
+# 安卓专属依赖（Windows 上无法安装，由 CI/Docker 环境编译注入）：
+#   pyjnius  — Android Java 桥接，提供 jnius 模块
+#   p4a      — python-for-android 运行时
+# 这些依赖在 buildozer.spec 的 requirements 中声明，
+# 由 p4a 在编译 APK 时从源码构建，不依赖 pip/PyPI。
+#
+# 注意事项：
 #   - 免费额度：GitHub 免费账号每月 2000 分钟构建时长
-#   - 建议每次推送前先本地 python -m py_compile 检查语法
+#   - 首次构建约 30-60 分钟（需下载 SDK/NDK/依赖）
+#   - 后续增量构建约 5-15 分钟
 # =============================================================================
 
 name: Build Android APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
-  workflow_dispatch:        # 支持手动触发
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 120    # 首次构建预留充足时间
+    timeout-minutes: 120
 
     steps:
-      # ---- 1. 检出代码 ----
+      # ───────────────────────────────────────────────────────
+      # 1. 检出代码
+      # ───────────────────────────────────────────────────────
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # ---- 2. 安装 Python 3.11（p4a 要求宿主与目标 Python 版本一致） ----
+      # ───────────────────────────────────────────────────────
+      # 2. 安装 Python 3.11
+      # ───────────────────────────────────────────────────────
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
-      # ---- 3. 安装系统依赖（buildozer + python-for-android 所需） ----
+      # ───────────────────────────────────────────────────────
+      # 3. 安装系统依赖
+      #    buildozer 和 python-for-android 编译所需的全部系统库
+      # ───────────────────────────────────────────────────────
       - name: Install system dependencies
         run: |
           sudo apt update -qq
@@ -52,15 +68,18 @@ jobs:
             git zip unzip openjdk-17-jdk python3-pip python3-dev \
             autoconf autopoint libtool pkg-config zlib1g-dev \
             libncurses5-dev libncursesw5-dev libtinfo5 cmake \
-            libffi-dev libssl-dev libltdl-dev gettext
+            libffi-dev libssl-dev libltdl-dev gettext \
+            libgles2-mesa-dev libsdl2-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libsdl2-ttf-dev
 
-      # ---- 3b. 设置 Java 17（Gradle 8.14+ 需要 Java 17，默认的 Java 11 不兼容） ----
+      # ───────────────────────────────────────────────────────
+      # 4. 设置 Java 17 为默认 JDK
+      #    Gradle 8.14+ 需要 Java 17，Ubuntu 22.04 默认 Java 11
+      # ───────────────────────────────────────────────────────
       - name: Set Java 17 as default
         run: |
-          # Ubuntu 22.04 上 openjdk-17-jdk 的默认安装路径
           JAVA17_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
           if [ ! -d "$JAVA17_HOME" ]; then
-            # fallback: 搜索任何 JDK 17
             JAVA17_HOME=$(ls -d /usr/lib/jvm/*17* 2>/dev/null | head -1)
           fi
           if [ -n "$JAVA17_HOME" ] && [ -x "$JAVA17_HOME/bin/java" ]; then
@@ -69,38 +88,47 @@ jobs:
             echo "Using Java: $($JAVA17_HOME/bin/java -version 2>&1 | head -1)"
           else
             echo "WARNING: Java 17 not found, falling back to default"
-            java -version
+            java -version 2>&1
           fi
 
-      # ---- 4. 安装 buildozer（用 Python 3.11 的 pip） ----
+      # ───────────────────────────────────────────────────────
+      # 5. 安装 buildozer 和 cython
+      # ───────────────────────────────────────────────────────
       - name: Install buildozer
         run: |
           python -m pip install --user --upgrade buildozer cython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # ---- 5. 验证 buildozer ----
+      # ───────────────────────────────────────────────────────
+      # 6. 验证 buildozer 可用
+      # ───────────────────────────────────────────────────────
       - name: Verify buildozer
         run: buildozer --version
         working-directory: TiShou
 
-      # ---- 6. 清理旧的构建缓存（避免上一次失败的 Python 3.14 缓存污染） ----
+      # ───────────────────────────────────────────────────────
+      # 7. 清理旧的构建缓存
+      # ───────────────────────────────────────────────────────
       - name: Clean build cache
         run: buildozer android distclean 2>&1 || true
         working-directory: TiShou
 
-      # ---- 7. 运行 buildozer 构建 debug APK ----
-      - name: Build APK with buildozer
+      # ───────────────────────────────────────────────────────
+      # 8. 构建 Debug APK
+      # ───────────────────────────────────────────────────────
+      - name: Build APK
         run: buildozer android debug 2>&1
         working-directory: TiShou
         env:
-          # 自动接受 SDK 许可证（buildozer.spec 已设 accept_sdk_license = True）
           BUILDOZER_NO_TERMINAL: 1
 
-      # ---- 8. 上传 APK 产物 ----
+      # ───────────────────────────────────────────────────────
+      # 9. 上传 APK 产物
+      # ───────────────────────────────────────────────────────
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: tishou-debug-apk
           path: TiShou/bin/*.apk
           if-no-files-found: error
-          retention-days: 30   # 保留 30 天
+          retention-days: 30

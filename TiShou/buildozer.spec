@@ -1,8 +1,10 @@
 # =============================================================================
 # TiShou — Buildozer 打包配置文件
+# 版本：v2.0.0（全新构建，未沿用旧配置）
+# 生成日期：2026-06-19
 # =============================================================================
 # 打包目标：Android APK（仅适配安卓真机）
-# 项目框架：Kivy 2.3.0+ / Python 3.11+
+# 项目框架：Kivy 2.3.0+ / Python 3.11
 # 打包工具：buildozer（基于 python-for-android）
 #
 # 使用说明：
@@ -11,310 +13,160 @@
 #   清理缓存：buildozer android distclean
 #   发布包（需keystore）：buildozer android release
 #
+# ═══════════════════════════════════════════════════════════════
+# Windows 系统无法安装的安卓专属依赖（由 buildozer/p4a 在编译时注入）：
+#   pyjnius — Android Java 桥接（悬浮窗、通知、AudioTrack、权限检测）
+#   jnius   — 随 pyjnius 附带，访问 Android 系统 API
+#   p4a      — python-for-android 运行时，提供 android 模块
+# 这些依赖在 Windows 开发环境通过 try-except ImportError 保护，
+# 在 APK 编译时由 p4a 从源码构建并注入。
+# ═══════════════════════════════════════════════════════════════
+#
 # 注意事项：
-#   1. 三个安卓专属库（accessible-android, android-permissions, android-apps）
-#      由 python-for-android 从源码编译加入 APK，不是 pip 包
-#   2. easyocr 模型文件（~100MB）默认首次启动联网下载
-#   3. APK 最低支持 API 26（Android 8.0），目标 API 33
+#   1. easyocr 模型文件（~100MB）默认首次启动联网下载
+#   2. APK 最低支持 API 26（Android 8.0），目标 API 33
+#   3. 不要写 pygame（依赖 longintrepr.h，Python 3.12+ 已移除）
+#   4. 不要写 android（p4a 自动包含）
+#   5. 不要锁定版本号（p4a 配方有自己的版本管理）
 # =============================================================================
 
 [app]
 
-# (str) Title of your application
+# (str) 应用标题
 title = TiShou
 
-# (str) Package name
+# (str) 包名
 package.name = tishou
 
-# (str) Package domain (needed for android/ios packaging)
+# (str) 包域名
 package.domain = org.tishou
 
-# (str) Source code where the main.py live
+# (str) 源代码目录（main.py 所在位置）
 source.dir = .
 
-# (list) Source files to include (patterns)
+# (list) 包含的源文件扩展名
 source.include_exts = py,png,jpg,kv,atlas,ttf,conf,json,ini
 
-# (list) List of inclusions using packagename=filelist format
-# source.include_exts = py,png,jpg,kv,atlas,ttf,json
+# (list) 排除的源文件/目录
+source.exclude_dirs = __pycache__,.git,.idea,.trae,logs,venv,tests
+source.exclude_patterns = *.log,*.pyc,*.pyo
 
-# (list) List of inclusions
-# source.includes = *.json, *.ini
-
-# (list) Exclude source files
-# source.excludes = tests/*, venv/*, __pycache__/*, .git/*, .idea/*, *.log
-
-# (str) Application versioning
+# (str) 应用版本号
 version = 1.0.0
 
-# (str) Application versioning (method)
-# version.regex = __version__ = ['"](.*)['"]
-# version.filename = %(source.dir)s/main.py
-
-# (list) Application requirements
 # ═══════════════════════════════════════════════════════════════
-# 注意事项：
-#   accessible-android / android-apps — 非 PyPI 包，无 p4a recipe，无法通过 pip/p4a 安装
-#   pyobjus — 是 iOS Objective-C 桥接库，不适用于 Android
-#   ✅ 代码中已通过 try-except ImportError 保护，缺失时自动降级
-#   ✅ 无障碍备用方案：pyjnius → Java AccessibilityService API
-#   ✅ 应用列表备用方案：subprocess → pm list packages 命令
-#   不要把不存在/不兼容的包写进 requirements，否则构建必失败
+# 依赖清单（由 python-for-android 编译）
+# 所有包均通过 p4a recipe 从源码构建，不依赖 pip/PyPI
 # ═══════════════════════════════════════════════════════════════
-requirements = python3,Kivy,pyjnius,requests,easyocr,Pillow,numpy,schedule
+requirements = python3,kivy,pyjnius,requests,easyocr,pillow,numpy,schedule
 
-# (str) Custom source folders for requirements
-# requirements.source.pyyaml = ext_libs/pyyaml
-
-# (list) Garden requirements
-# garden_requirements =
-
-# (str) Presplash of the application
+# (str) 启动画面图片
 # presplash.filename = %(source.dir)s/data/presplash.png
 
-# (str) Icon of the application
+# (str) 应用图标
 # icon.filename = %(source.dir)s/data/icon.png
 
-# (str) Supported orientation (one of landscape, sensorLandscape, portrait or all)
+# (str) 屏幕方向：竖屏
 orientation = portrait
 
-# (list) List of service to declare
-# services = NAME:ENTRYPOINT_TO_PY,NAME2:ENTRYPOINT2_TO_PY
-
-#
-# OS-specific Settings
-#
-
-#
-# Android specific
-#
-
-# (bool) Indicate if the application should be fullscreen or not
+# (bool) 全屏模式
 fullscreen = 0
 
-# (int) Android API to use
+#
+# ─────────────────────────────────────────────────────────────
+# Android 专属配置
+# ─────────────────────────────────────────────────────────────
+#
+
+# (int) 目标 Android API 级别
 android.api = 33
 
-# (int) Minimum API required
+# (int) 最低 Android API 级别（Android 8.0）
 android.minapi = 26
 
-# (int) Android SDK version to use
-# android.sdk = 24
-
-# (str) Android NDK version to use
+# (str) NDK 版本
 android.ndk = 26d
 
-# (bool) Use --private data storage (True) or --dir public storage (False)
-# android.private_storage = True
-
-# (str) Android NDK directory (if not using the bundled NDK)
-# android.ndk_path =
-
-# (str) Android SDK directory (if not using the bundled SDK)
-# android.sdk_path =
-
-# (str) Android Ant directory (if not using the bundled Ant)
-# android.ant_path =
-
-# (bool) If True, then skip trying to update the Android SDK
-# This can be useful to avoid excess Internet downloads
-# android.skip_update = False
-
-# (bool) If True, then automatically accept SDK license
-# agreements. This is intended for automation only. If set to False,
-# the default, you will be shown the license when first running
-# buildozer.
+# (bool) 自动接受 SDK 许可证
 android.accept_sdk_license = True
 
-# (str) Android architectures to build for
-# 仅 arm64-v8a（现代手机都是 64 位），减少一半编译时间
+# (list) 目标 CPU 架构（仅 arm64-v8a，现代手机均为 64 位）
 android.archs = arm64-v8a
 
-# (str) Android entry point, default is 'org.kivy.android.PythonActivity'
-# android.entrypoint = org.robovm.apple.runtime.AppleRuntime
+# (bool) 使用 Gradle 构建系统
+android.gradle = True
 
-# (list) List of Java .jar files to add to the libs so that pyjnius can access
-# their classes. Don't add jars that you do not need, since extra jars can slow
-# down the build
-# android.add_jars = foo.jar,bar.jar
+# (bool) 启用 AndroidX 支持库
+android.use_androidx = True
 
-# (list) List of Python .py source files to compile to .pyc
-# android.add_pyx = src/main.py, src/some_script.py
-
-# (str) python-for-android (p4a) branch to use, defaults to 'master'
-# android.p4a_branch = master
-
-# (list) List of Java classes to add as activities to the manifest.
-# android.add_activities = com.example.FooActivity
-
-# (list) List of Java classes to add as services to the manifest.
-# android.add_services = com.example.FooService
-
-# (list) List of Java classes to add as receivers to the manifest.
-# android.add_receivers = com.example.FooReceiver
-
-# (str) Python for android (p4a) bootstrap to use
-# android.bootstrap = sdl2
-
-# (str) Python for android (p4a) distribution type (appsource, internal)
-# android.distribution = internal
-
-#
-# Permissions
-#
-# (list) Android permissions to use
+# ═══════════════════════════════════════════════════════════════
+# Android 权限清单
+# 这些权限在 Windows 上无法声明或测试，仅在 APK 编译时生效
+# ═══════════════════════════════════════════════════════════════
 android.permissions = \
     BIND_ACCESSIBILITY_SERVICE, \
     INTERNET, \
     ACCESS_NETWORK_STATE, \
+    ACCESS_WIFI_STATE, \
     READ_EXTERNAL_STORAGE, \
     WRITE_EXTERNAL_STORAGE, \
     ACCESS_FINE_LOCATION, \
     ACCESS_COARSE_LOCATION, \
     SYSTEM_ALERT_WINDOW, \
     FOREGROUND_SERVICE, \
+    FOREGROUND_SERVICE_SPECIAL_USE, \
     POST_NOTIFICATIONS, \
     REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, \
-    MEDIA_PROJECTION
+    MEDIA_PROJECTION, \
+    RECEIVE_BOOT_COMPLETED, \
+    WAKE_LOCK, \
+    VIBRATE
 
-# (list) Android libraries to use as dependencies (e.g. for pyjnius access to JARs)
-# android.libs =
-
-# (int) Android logging level (20 = verbose, 21 = debug, 22 = info, 23 = warning, 24 = error)
+# (int) 调试日志级别（20=verbose, 21=debug, 22=info, 23=warning, 24=error）
 android.log_level = 22
 
-# (int) Android release log level (used for release builds)
+# (int) 发布包日志级别
 android.release_log_level = 24
 
-# (str) Meta-data to add to AndroidManifest.xml
-# android.meta_data =
+# (bool) 保持屏幕常亮（WakeLock）
+android.wakelock = True
 
-# (str) Extra XML to add to AndroidManifest.xml (e.g., for accessibility service)
-# ═══════════════════════════════════════════════════════════════
+# (bool) 启用振动
+android.vibrate = True
+
+# (str) Android 入口 Activity
+# android.entrypoint = org.kivy.android.PythonActivity
+
+# (str) p4a 引导模式
+# android.bootstrap = sdl2
+
+# (str) 额外 AndroidManifest.xml 配置
 # 无障碍服务说明：
-#   Kivy 纯 Python 应用无法直接注册系统级无障碍服务（需 Java AccessibilityService 子类）
+#   Kivy 纯 Python 应用无法直接注册系统级 AccessibilityService
+#   （需要 Java AccessibilityService 子类）
 #   实际采集方案：
 #   ① pyjnius 运行时调用 android.accessibilityservice API（代码层实现）
 #   ② 兜底：EasyOCR 截图识别（已实现）
-#   不需要在 AndroidManifest 中声明 <service>，因为 Python 侧无法提供 Java 类
-# ═══════════════════════════════════════════════════════════════
 # android.extra_manifest_xml =
 
-# (list) Android extra Java libs to add to the APK
-# android.extra_libs =
-
-# (str) The Android theme to use
-# android.theme = @android:style/Theme.NoTitleBar
-
-# (str) The Android accent color (supports HEX, RGB, ARGB)
-# android.accent_color = FF0000
-
-# (str) The Android primary color
-# android.primary_color = 00FF00
-
-# (str) The Android resource string for app_name
-# android.string.app_name = TiShou
-
-# (bool) Indicate if the application needs to stay turned on (e.g., for screen wake lock)
-android.wakelock = True
-
-# (bool) Indicate if the application should use the device's hardware keyboard
-# android.hardware_keyboard = False
-
-# (bool) Indicate if the application uses the camera
-# android.camera = False
-
-# (bool) Indicate if the application uses the device's flash
-# android.flash = False
-
-# (bool) Indicate if the application uses the device's vibrator
-# android.vibrate = True
-
-# (bool) Indicate if the application uses the device's compass
-# android.compass = False
-
-# (bool) Indicate if the application uses the device's accelerometer
-# android.accelerometer = False
-
-# (list) List of extra system permissions (Android only)
-# android.system_permissions =
-
-# (str) The Android intent to add (e.g., for deep linking)
-# android.intent =
-
-# (str) The Android intent scheme to add
-# android.intent_scheme =
-
 #
-# iOS specific
+# ─────────────────────────────────────────────────────────────
+# 以下为其他平台配置（本项目仅适配安卓，保留默认值）
+# ─────────────────────────────────────────────────────────────
 #
 
-# (str) URL to your application's App Store page (used for title bar)
-# ios.appstore_url = http://itunes.apple.com/...
-
-# (str) Path to a custom kitchen to use
+# iOS
+# ios.appstore_url =
 # ios.kitchen =
 
-#
-# Windows specific
-#
-
-# (list) List of Windows dependencies to include
+# Windows
 # windows.dependencies =
-
-# (str) Windows application entry point
 # windows.entry_point = main.py
 
-# (list) List of DLL files to include for Windows
-# windows.include_dlls =
-
-#
-# macOS specific
-#
-
-# (list) List of macOS dependencies to include
+# macOS
 # macos.dependencies =
-
-# (str) macOS application entry point
 # macos.entry_point = main.py
 
-# (list) List of frameworks to include for macOS
-# macos.frameworks =
-
-#
-# Linux specific
-#
-
-# (list) List of Linux dependencies to include
+# Linux
 # linux.dependencies =
-
-# (str) Linux application entry point
 # linux.entry_point = main.py
-
-#
-# Common
-#
-
-# (list) List of custom external dependencies for the project
-# dependencies =
-
-# (list) Custom or extra Java/Kotlin/Android dependencies
-# android.gradle_dependencies =
-
-# (list) Custom AAR or JAR files to add to the APK
-# android.add_aars =
-
-# (list) Custom AAR or JAR files to add to the APK
-# android.add_jars =
-
-# (bool) Use the Gradle build system instead of the deprecated Ant
-android.gradle = True
-
-# (str) Path to the gradle executable (auto-detected if not specified)
-# android.gradle_path =
-
-# (list) Android product flavors
-# android.product_flavors =
-
-# (bool) Enable the use of AndroidX libraries
-android.use_androidx = True

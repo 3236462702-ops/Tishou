@@ -402,3 +402,89 @@ pip install requests kivy pillow pytesseract accessible-android android-permissi
 - ❌ 禁止删减相关代码与打包依赖
 - ❌ 免责隐私协议禁止联网获取
 - ❌ 禁止使用付费/需登录/私有接口
+
+---
+
+## 十五、构建脚本规则（每次推送/构建必须全新生成）
+
+### 1. 核心原则
+- **每次推送/构建时，必须删除旧的构建脚本，全新生成。** 不允许沿用、修改旧脚本。
+- 构建脚本需要根据当前项目实际代码状态重新生成，确保与代码一致。
+
+### 2. 构建脚本清单（3 个文件，每次全新生成）
+
+| 文件 | 路径 | 用途 |
+|------|------|------|
+| Buildozer 配置 | `TiShou/buildozer.spec` | Android APK 打包核心配置 |
+| GitHub Actions 工作流 | `.github/workflows/build-apk.yml` | CI/CD 自动构建 APK |
+| Docker 本地构建脚本 | `TiShou/docker_build_apk.ps1` | Windows 上通过 Docker 构建 APK |
+
+### 3. 构建脚本必须包含的内容
+
+#### 3.1 Android 专属依赖（Windows 系统无法安装，仅在 APK 编译时注入）
+以下依赖在 Windows 开发环境中**不可用/不可安装**，但必须在构建脚本中声明，由 python-for-android 在编译 APK 时从源码构建：
+
+| 依赖 | 说明 | 注入方式 |
+|------|------|----------|
+| `pyjnius` | Android Java 桥接（悬浮窗、通知、AudioTrack、权限检测） | `buildozer.spec` requirements |
+| `jnius` | 随 pyjnius 附带，访问 Android 系统 API | 随 pyjnius 自动包含 |
+| `p4a`（python-for-android） | Android 运行时环境 | buildozer 自动注入 |
+
+**注意：以下库名不存在于 PyPI，不可写入 requirements：**
+- `accessible-android` — ❌ 非 PyPI 包，无 p4a recipe，代码中已用 try-except ImportError 保护，缺失时自动降级为 EasyOCR
+- `android-permissions` — ❌ 非 PyPI 包，代码中已用 pyjnius 桥接 Android Context.checkSelfPermission
+- `android-apps` — ❌ 非 PyPI 包，代码中已用 subprocess → pm list packages 降级
+- `pyobjus` — ❌ iOS 桥接库，不适用于 Android
+
+#### 3.2 Android 权限清单（`buildozer.spec` 中声明）
+构建脚本必须声明以下 Android 权限（Windows 开发环境无法声明或测试）：
+
+```
+INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE,
+READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE,
+ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION,
+SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE,
+FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS,
+REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, MEDIA_PROJECTION,
+BIND_ACCESSIBILITY_SERVICE, RECEIVE_BOOT_COMPLETED,
+WAKE_LOCK, VIBRATE
+```
+
+#### 3.3 p4a 编译依赖清单（`buildozer.spec` requirements）
+```
+python3,kivy,pyjnius,requests,easyocr,pillow,numpy,schedule
+```
+
+#### 3.4 构建环境要求
+- **操作系统**：Ubuntu 22.04（GitHub Actions / Docker）
+- **Python**：3.11（必须与目标设备 p4a 编译版本一致）
+- **Java**：JDK 17（Gradle 8.x 要求）
+- **NDK**：26d
+- **目标 API**：33（Android 13）
+- **最低 API**：26（Android 8.0）
+- **CPU 架构**：仅 arm64-v8a
+- **构建系统**：Gradle + AndroidX
+
+#### 3.5 构建脚本必须包含的注释
+每个构建脚本文件头部必须包含：
+- 版本号（每次全新生成递增）
+- 生成日期
+- 标记"全新构建，未沿用旧配置"
+- 安卓专属依赖说明（Windows 上无法安装的依赖清单及原因）
+- 使用说明
+
+### 4. 构建流程
+```
+删除旧脚本 → 全新生成 buildozer.spec → 全新生成 build-apk.yml → 全新生成 docker_build_apk.ps1 → 提交推送
+```
+
+### 5. 构建产物
+- 调试包：`TiShou/bin/TiShou-*-debug.apk`
+- 发布包：`TiShou/bin/TiShou-*-release.apk`（需 keystore 签名）
+
+### 6. 注意事项
+- 不要写 `pygame`（依赖 `longintrepr.h`，Python 3.12+ 已移除）
+- 不要写 `android`（p4a 自动包含）
+- 不要锁定版本号（p4a 配方有自己的版本管理）
+- easyocr 模型文件（~100MB）默认首次启动联网下载
+- 首次构建约 30-60 分钟，后续增量构建约 5-15 分钟
