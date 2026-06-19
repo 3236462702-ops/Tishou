@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.1.0
-# 更新日期：2026-06-19
-# 更新内容：自建 Java AccessibilityService + KeepAliveService + 权限重构
+# 版本：v2.2.0
+# 生成日期：2026-06-19
+# 更新内容：权限修复（反斜杠续行→逗号分隔）+ 进度精确上报 + CJK字体 + 权限去重
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -22,7 +22,7 @@
 # 安卓专属依赖说明（Windows 上无法安装，由 Docker 容器编译注入）：
 #   pyjnius — Android Java 桥接（悬浮窗/通知/AudioTrack/权限检测）
 #   jnius   — 访问 Android 系统 API
-#   p4a      — python-for-android 运行时
+#   p4a      — python-for-android 运行时（提供 android 模块）
 # 这些依赖在 buildozer.spec 的 requirements 中声明，
 # 由 p4a 在容器内编译 APK 时从源码构建，不依赖 Windows 宿主环境。
 # ═══════════════════════════════════════════════════════════════
@@ -32,7 +32,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.1.0" -ForegroundColor Cyan
+Write-Host "  版本: v2.2.0" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
