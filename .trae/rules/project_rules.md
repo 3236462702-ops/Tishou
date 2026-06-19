@@ -54,3 +54,16 @@
 
 本地构建：`cd TiShou && .\docker_build_apk.ps1`
 Git 推送后自动构建：GitHub Actions 监听 main 分支 push 事件
+
+## 6. 安卓专属库不可移除规则（铁律）
+
+如果构建失败，经排查是因 pyjnius / jnius / p4a 这三个安卓专属库导致，**绝对禁止删除或替换它们**。
+原因：没有这些库，权限检测（悬浮窗、通知、定位、存储、无障碍）将无法正常工作。
+
+修复思路优先级：
+1. 检查 `buildozer.spec` 中 `requirements` 行格式是否正确（逗号分隔，无多余空格）
+2. 检查 `android.ndk`、`android.api`、`android.minapi` 版本是否兼容
+3. 检查 Docker 镜像版本是否过旧（`kivy/buildozer:latest`）
+4. 检查 `buildozer.spec` 中 `android.gradle = True` 是否开启
+5. 清理构建缓存后重试：`buildozer android distclean`
+6. 如属 p4a 配方（recipe）版本问题，尝试锁定 NDK/SDK 版本而非升级依赖
