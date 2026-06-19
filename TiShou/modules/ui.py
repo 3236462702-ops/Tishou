@@ -1183,32 +1183,18 @@ class LoadingScreen(Screen):
             )
             root.add_widget(self._title_label)
 
-            # 旋转动画圈 + 模块名称（模块名浮在圈的正中央）
-            spinner_container = FloatLayout(
-                size_hint_y=None,
-                height=dp_to_px(120),
-            )
-            self._spinner = LoadingSpinner(
-                size_hint=(0.6, 0.7),
-                pos_hint={"center_x": 0.5, "center_y": 0.5},
-            )
-            spinner_container.add_widget(self._spinner)
-
-            # 状态文字（浮在旋转圈正中央）
+            # 状态文字（模块名称，显示在进度条上方）
             self._status_label = Label(
                 text="请稍候",
                 font_size=dp_to_px(14),
                 color=hex_to_rgba(theme.text_secondary()),
-                size_hint=(None, None),
-                width=dp_to_px(200),
+                size_hint_y=None,
                 height=dp_to_px(30),
-                pos_hint={"center_x": 0.5, "center_y": 0.5},
                 halign="center",
                 valign="middle",
                 font_name=_get_cjk_font_name(),
             )
-            spinner_container.add_widget(self._status_label)
-            root.add_widget(spinner_container)
+            root.add_widget(self._status_label)
 
             # 进度条容器
             bar_box = BoxLayout(
@@ -1226,17 +1212,32 @@ class LoadingScreen(Screen):
             bar_box.add_widget(BoxLayout(size_hint_x=0.1))
             root.add_widget(bar_box)
 
-            # 百分比
+            # 旋转圈 + 百分比（圈套在百分比外面，百分比浮在圈正中央）
+            percent_container = FloatLayout(
+                size_hint_y=None,
+                height=dp_to_px(160),
+            )
+            self._spinner = LoadingSpinner(
+                size_hint=(0.7, 0.8),
+                pos_hint={"center_x": 0.5, "center_y": 0.5},
+            )
+            percent_container.add_widget(self._spinner)
+
             self._percent_label = Label(
                 text="0%",
-                font_size=dp_to_px(32),
+                font_size=dp_to_px(36),
                 bold=True,
                 color=hex_to_rgba(StyleConstants.ACCENT_COLOR),
-                size_hint_y=None,
-                height=dp_to_px(50),
+                size_hint=(None, None),
+                width=dp_to_px(150),
+                height=dp_to_px(60),
+                pos_hint={"center_x": 0.5, "center_y": 0.5},
+                halign="center",
+                valign="middle",
                 font_name=_get_cjk_font_name(),
             )
-            root.add_widget(self._percent_label)
+            percent_container.add_widget(self._percent_label)
+            root.add_widget(percent_container)
 
             root.add_widget(BoxLayout())  # 底部弹性占位
 
@@ -1308,7 +1309,7 @@ class LoadingScreen(Screen):
                     import math
                     scale = 1.0 + 0.04 * math.sin(self._pulse_phase)
                     if hasattr(self, "_percent_label") and self._percent_label:
-                        self._percent_label.font_size = dp_to_px(32) * scale
+                        self._percent_label.font_size = dp_to_px(36) * scale
                 except Exception:
                     pass
 

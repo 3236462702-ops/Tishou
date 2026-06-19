@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Buildozer 打包配置文件
-# 版本：v2.2.0
+# 版本：v2.3.0
 # 更新日期：2026-06-19
-# 更新内容：权限修复（反斜杠续行→逗号分隔）+ 进度精确上报 + CJK字体 + 权限去重
+# 更新内容：全部存储权限(MANAGE_EXTERNAL_STORAGE) + OCR异步加载不卡主线程 + 旋转圈套百分比
 # =============================================================================
 # 打包目标：Android APK（仅适配安卓真机）
 # 项目框架：Kivy 2.3.0+ / Python 3.11
@@ -111,7 +111,7 @@ android.add_resources = res/xml:xml
 # 这些权限在 Windows 上无法声明或测试，仅在 APK 编译时生效
 # ═══════════════════════════════════════════════════════════════
 # 注意：Buildozer ConfigParser 不支持反斜杠续行，必须逗号分隔写在同一行
-android.permissions = BIND_ACCESSIBILITY_SERVICE, INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE, FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, RECEIVE_BOOT_COMPLETED, WAKE_LOCK, VIBRATE
+android.permissions = BIND_ACCESSIBILITY_SERVICE, INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE, ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE, FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, RECEIVE_BOOT_COMPLETED, WAKE_LOCK, VIBRATE
 
 # (int) 调试日志级别（20=verbose, 21=debug, 22=info, 23=warning, 24=error）
 android.log_level = 22

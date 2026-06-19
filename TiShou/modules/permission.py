@@ -64,10 +64,11 @@ class PermissionState(Enum):
 STAGE_1_PERMISSIONS = [
     {
         "key": "storage",
-        "name": "存储权限",
+        "name": "全部存储权限",
         "android_permission": "android.permission.READ_EXTERNAL_STORAGE",
         "android_permission2": "android.permission.WRITE_EXTERNAL_STORAGE",
-        "description": "用于读取配置、保存日志和缓存数据",
+        "android_permission3": "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "description": "用于读取配置、保存日志、截图缓存和素材下载",
         "required": True,
     },
     {
@@ -687,6 +688,12 @@ class PermissionManager:
             if perm_key == "float_window":
                 return self._check_float_window_permission()
 
+            # ---- 存储权限：Android 11+ 需要 MANAGE_EXTERNAL_STORAGE ----
+            # Android 10 及以下：READ/WRITE_EXTERNAL_STORAGE 弹窗即可
+            # Android 11+：必须跳转系统设置开启"所有文件访问权限"
+            if perm_key == "storage":
+                return self._check_storage_permission()
+
             # ---- 特殊权限：无障碍服务（BIND_ACCESSIBILITY_SERVICE） ----
             # BIND_ACCESSIBILITY_SERVICE 是签名级权限，checkSelfPermission 永远返回 DENIED。
             # 正确做法：检查我们的自定义 Java AccessibilityService 是否正在运行。
@@ -732,6 +739,26 @@ class PermissionManager:
             return PermissionState.GRANTED if can_draw else PermissionState.DENIED
         except Exception as e:
             self._logger.warning(f"悬浮窗权限检查异常: {e}")
+            return PermissionState.DENIED
+
+    # ---------- 存储权限检查（Android 11+ 全部存储） ----------
+    def _check_storage_permission(self) -> PermissionState:
+        try:
+            from jnius import autoclass
+            Build = autoclass("android.os.Build")
+            sdk = Build.VERSION.SDK_INT
+
+            if sdk < 30:
+                # Android 10 及以下：检查 READ_EXTERNAL_STORAGE
+                return self._check_normal_permission("storage")
+
+            # Android 11+：使用 Environment.isExternalStorageManager()
+            Environment = autoclass("android.os.Environment")
+            if Environment.isExternalStorageManager():
+                return PermissionState.GRANTED
+            return PermissionState.DENIED
+        except Exception as e:
+            self._logger.warning(f"存储权限检查异常: {e}")
             return PermissionState.DENIED
 
     # ---------- 无障碍服务检查 ----------
@@ -807,7 +834,7 @@ class PermissionManager:
     def _get_android_perm_name(self, perm_key: str) -> str:
         """根据权限键名获取安卓权限字符串"""
         mapping = {
-            "storage": "android.permission.READ_EXTERNAL_STORAGE",
+            "storage": "android.permission.MANAGE_EXTERNAL_STORAGE",
             "notifications": "android.permission.POST_NOTIFICATIONS",
             "location": "android.permission.ACCESS_FINE_LOCATION",
             "network": "android.permission.INTERNET",
@@ -945,6 +972,10 @@ class PermissionManager:
             if perm_key == "float_window":
                 return self._request_float_window()
 
+            # ---- 存储权限：Android 11+ 跳转全部文件访问设置 ----
+            if perm_key == "storage":
+                return self._request_storage_permission()
+
             # ---- 特殊权限：无障碍服务 → 跳转无障碍设置页 ----
             if perm_key == "accessibility":
                 return self._request_accessibility_service()
@@ -1000,6 +1031,39 @@ class PermissionManager:
             return True
         except Exception as e:
             self._logger.error(f"跳转悬浮窗设置页失败: {e}")
+            return self._open_app_settings_fallback()
+
+    # ---------- 存储权限申请（Android 11+ 全部存储） ----------
+    def _request_storage_permission(self) -> bool:
+        try:
+            from jnius import autoclass
+            Build = autoclass("android.os.Build")
+            sdk = Build.VERSION.SDK_INT
+
+            if sdk < 30:
+                # Android 10 及以下：普通弹窗申请
+                return self._request_normal_permission(
+                    "android.permission.READ_EXTERNAL_STORAGE", "storage"
+                )
+
+            # Android 11+：跳转"所有文件访问权限"设置页
+            PythonActivity = autoclass("org.kivy.android.PythonActivity")
+            Intent = autoclass("android.content.Intent")
+            Settings = autoclass("android.provider.Settings")
+            Uri = autoclass("android.net.Uri")
+            activity = PythonActivity.mActivity
+            if not activity:
+                return False
+
+            pkg = activity.getPackageName()
+            intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+            intent.setData(Uri.parse("package:" + pkg))
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            activity.startActivity(intent)
+            self._logger.info(f"已跳转全部存储权限设置页（包名: {pkg}）")
+            return True
+        except Exception as e:
+            self._logger.error(f"跳转全部存储权限设置页失败: {e}")
             return self._open_app_settings_fallback()
 
     # ---------- 无障碍服务申请 ----------
@@ -1431,10 +1495,10 @@ def set_manual_region_ui(region: str):
 
 MODULE_REQUIRED_PERMISSIONS = {
     "float_win": ["float_window", "notifications", "battery"],
-    "capture":    ["accessibility"],
+    "capture":    ["accessibility", "storage"],
     "order_filter":   [],
     "statistics":     [],
-    "material_update":[],
+    "material_update":["storage"],
     "app_list":       [],
     "activate_code":  [],
     "network":        [],
@@ -1443,7 +1507,7 @@ MODULE_REQUIRED_PERMISSIONS = {
 
 # 必须跳转系统设置页的权限（无法通过弹窗申请的"特殊权限"）
 # 这些权限申请后用户需手动操作，加载流程不应等待
-SPECIAL_PERMISSIONS = {"float_window", "accessibility", "battery", "screen_record"}
+SPECIAL_PERMISSIONS = {"float_window", "accessibility", "battery", "screen_record", "storage"}
 
 
 def get_module_permissions(module_name: str) -> list:

@@ -466,14 +466,13 @@ class TiShouApp:
             modules_ok = self._load_modules()
             self._on_stage_end("核心模块加载", ok=modules_ok)
 
-            # OCR 模型加载单独汇报进度（首次加载约需 30-60 秒）
+            # OCR 模型加载（后台异步，不阻塞启动流程）
+            # easyocr ch_sim 模型首次加载约需 30-60 秒，同步加载会冻结 UI
             if modules_ok:
                 self._stage = StartupStage.OCR_LOAD
-                self._on_stage_start("OCR 识别模型加载（首次较慢，请耐心等待）", progress=70.0)
-                ocr_ok = self._load_ocr()
-                self._on_stage_end("OCR 识别模型加载", ok=ocr_ok)
-            else:
-                ocr_ok = False
+                self._on_stage_start("OCR 识别模型加载（后台异步加载中...）", progress=70.0)
+                self._load_ocr_async()  # 后台线程，不阻塞
+                self._on_stage_end("OCR 识别模型加载（已提交后台）", ok=True)
 
             # ---- 第7步：素材更新检测 ----
             self._stage = StartupStage.MATERIAL_UPDATE
@@ -628,23 +627,43 @@ class TiShouApp:
     # ========================================================
     def _load_ocr(self) -> bool:
         """
-        加载 easyocr 模型
-        注意：实际 OCR 引擎由 capture 模块管理（单例），
-        此处仅验证 capture 模块的引擎已初始化，避免重复加载。
+        加载 easyocr 模型（同步版本，已废弃）
+        请使用 _load_ocr_async() 代替，避免阻塞主线程导致 UI 冻结。
         """
-        try:
-            capture_mod = self._modules.get("capture")
-            if capture_mod and hasattr(capture_mod, "warmup_engine_ui"):
-                self._logger.info("通过 capture 模块加载 OCR 引擎...")
-                ok = capture_mod.warmup_engine_ui()
-                if ok:
-                    self._logger.info("OCR 引擎加载完成（capture 模块管理）")
-                    return True
+        return self._load_ocr_async()
+
+    def _load_ocr_async(self) -> bool:
+        """
+        异步加载 OCR 模型（不阻塞主线程）
+        ==============================
+        easyocr ch_sim 模型首次加载约需 30-60 秒（模型文件 ~100MB），
+        同步调用会阻塞 Kivy 主线程，导致 UI 完全冻结（进度条不动、动画停止）。
+        改为后台线程加载，启动流程不等待 OCR 完成。
+        """
+        capture_mod = self._modules.get("capture")
+        if not capture_mod or not hasattr(capture_mod, "warmup_engine_ui"):
             self._logger.warning("capture 模块不可用，跳过 OCR 引擎加载")
             return False
-        except Exception as e:
-            self._logger.error(f"OCR 引擎加载失败: {e}")
-            return False
+
+        self._ocr_loaded = threading.Event()
+        self._ocr_result = False
+
+        def _load_worker():
+            try:
+                self._logger.info("OCR 引擎加载中（后台线程）...")
+                ok = capture_mod.warmup_engine_ui()
+                self._ocr_result = ok
+                self._logger.info(f"OCR 引擎加载完成: {'成功' if ok else '失败'}")
+            except Exception as e:
+                self._logger.error(f"OCR 引擎加载异常: {e}")
+                self._ocr_result = False
+            finally:
+                self._ocr_loaded.set()
+
+        t = threading.Thread(target=_load_worker, daemon=True, name="ocr-loader")
+        t.start()
+        self._logger.info("OCR 引擎已提交后台加载，不阻塞启动流程")
+        return True
 
     def _load_modules(self) -> bool:
         """加载所有核心业务模块（带逐模块进度上报 + 权限主动申请）"""
