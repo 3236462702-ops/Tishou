@@ -1053,9 +1053,9 @@ def _ensure_cjk_font():
 
 
 def _get_cjk_font_name():
-    """获取 CJK 字体名称，若未注册则返回 None（使用默认字体）"""
+    """获取 CJK 字体名称，桌面环境退回 Kivy 默认 Roboto（避免 font_name=None 崩溃）"""
     _ensure_cjk_font()
-    return _cjk_font_name
+    return _cjk_font_name or 'Roboto'
 
 
 class LoadingSpinner(Widget):

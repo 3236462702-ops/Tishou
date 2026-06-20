@@ -618,11 +618,9 @@ class CaptureManager:
         # 确保截图目录存在
         ensure_dir(CAPTURE_DIR)
 
-        # ---- 预热 easyocr（线程中加载，不阻塞启动） ----
-        self._warmup_thread = threading.Thread(
-            target=self._warmup_engines, daemon=True
-        )
-        self._warmup_thread.start()
+        # 注意：OCR 模型加载由 main.py 的 _load_ocr_async() 统一管理，
+        # 此处不再启动冗余预热线程，避免与主流程的 _load_ocr_async 争抢
+        # _load_lock 和 GIL，导致 Kivy 主线程被饿死、进度条卡住不动。
 
         self._logger.info(
             f"双引擎管理器初始化完成 (引擎={self._preferred_engine}, "
