@@ -48,10 +48,10 @@ test_*.output
 # ---- 截图缓存 ----
 captures/
 *.png
-*.jpg
-*.jpeg
-# 保留 assets 目录的结构，但不保留具体内容
-assets/*
+
+# ---- 离线模型文件（大文件，由 download_ocr_models.py 下载，Buildozer 打包时自动包含） ----
+models/*.pth
+models/*.zip
 !assets/.gitkeep
 
 # ---- cache 目录 ----

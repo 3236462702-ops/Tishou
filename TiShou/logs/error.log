@@ -7,3 +7,6 @@ Traceback (most recent call last):
 ZeroDivisionError: division by zero
 
 [2026-06-16 08:34:57] [TiShou.error] [ERROR] [主设置页] 主设置页构建失败: 'min_height'
+[2026-06-20 07:28:38] [TiShou.error] [ERROR] [免责页] 免责页构建失败: None is not allowed for Label.font_name
+[2026-06-20 07:28:38] [TiShou.error] [ERROR] [卡密页] 卡密页构建失败: None is not allowed for Label.font_name
+[2026-06-20 07:28:38] [TiShou.error] [ERROR] [加载页] 加载页构建失败: None is not allowed for Label.font_name

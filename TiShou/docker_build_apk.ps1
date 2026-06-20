@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.3.1
+# 版本：v2.3.2
 # 生成日期：2026-06-20
-# 更新内容：EasyOCR离线模型部署 + 加载页圈套百分比 + 三元素分散布局
+# 更新内容：补齐抢单设置UI（区域/刷新/点击） + 无障碍注册链规则 + Android 15/16 适配
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -26,13 +26,31 @@
 # 这些依赖在 buildozer.spec 的 requirements 中声明，
 # 由 p4a 在容器内编译 APK 时从源码构建，不依赖 Windows 宿主环境。
 # ═══════════════════════════════════════════════════════════════
+# TiShou 安卓权限清单（共 17 项，Windows 无法处理，由 Docker p4a 编译注入）
+# ═══════════════════════════════════════════════════════════════
+# 核心功能: BIND_ACCESSIBILITY_SERVICE, SYSTEM_ALERT_WINDOW, FOREGROUND_SERVICE,
+#           FOREGROUND_SERVICE_SPECIAL_USE, POST_NOTIFICATIONS, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+# 存储:    READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE, MANAGE_EXTERNAL_STORAGE
+# 定位:    ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION
+# 网络:    INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE
+# 系统:    RECEIVE_BOOT_COMPLETED, WAKE_LOCK, VIBRATE
+# ═══════════════════════════════════════════════════════════════
+# 无障碍服务注册链（3 文件联动，缺一不可，Android 15/16 严格校验）:
+#   AndroidManifest.tmpl.xml → <service> + intent-filter + meta-data
+#   res/xml/accessibility_service_config.xml → 服务能力声明
+#   src/main/java/.../TiShouAccessibilityService.java → 服务实现
+# buildozer.spec 必须配置:
+#   android.add_src = src/main/java
+#   android.add_resources = res/xml:xml
+#   android.permissions 含 BIND_ACCESSIBILITY_SERVICE
+# ═══════════════════════════════════════════════════════════════
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.3.1" -ForegroundColor Cyan
+Write-Host "  版本: v2.3.2" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

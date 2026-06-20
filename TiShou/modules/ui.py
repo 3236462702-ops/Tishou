@@ -1561,6 +1561,9 @@ class MainSettingsScreen(Screen):
             self._build_section_capture(content)
             self._build_section_ocr(content)
             self._build_section_filter(content)
+            self._build_section_region(content)
+            self._build_section_refresh(content)
+            self._build_section_click(content)
             self._build_section_float(content)
             self._build_section_stats(content)
             self._build_section_theme(content)
@@ -1711,27 +1714,333 @@ class MainSettingsScreen(Screen):
         parent.add_widget(section)
 
     def _build_section_filter(self, parent):
-        """订单筛选"""
+        """订单筛选（金额/距离/里程/单价/类型）"""
         from kivy.uix.textinput import TextInput
         from kivy.uix.switch import Switch
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.label import Label
+        from modules.order_filter import (
+            get_order_filter, ORDER_TYPES, set_price_range_ui,
+            set_pickup_distance_ui, set_order_distance_ui, set_unit_price_ui,
+        )
         section, inner = self._make_section("订单筛选")
-        config = ConfigManager()
-        filters = config.get("filter_thresholds", {})
-        min_p = filters.get("min_price", 0)
-        max_p = filters.get("max_price", 999)
 
-        min_input = TextInput(
-            text=str(min_p), font_size=dp_to_px(15),
+        filt = get_order_filter()
+        pr = filt.get_price_range()
+        pdr = filt.get_pickup_distance_range()
+        odr = filt.get_order_distance_range()
+        upr = filt.get_unit_price_range()
+        selected_types = set(filt.get_order_types())
+
+        theme = get_theme_manager()
+
+        # ---- 金额区间 ----
+        min_p_input = TextInput(
+            text=str(pr[0]), font_size=dp_to_px(15),
             size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
             multiline=False, input_filter="float",
         )
-        self._add_row(inner, "最低价格", min_input)
-        max_input = TextInput(
-            text=str(max_p), font_size=dp_to_px(15),
+        min_p_input.bind(text=lambda inst, val: set_price_range_ui(
+            safe_float(val, 0), safe_float(max_p_input.text, 999999)
+        ))
+        max_p_input = TextInput(
+            text=str(pr[1]), font_size=dp_to_px(15),
             size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
             multiline=False, input_filter="float",
         )
-        self._add_row(inner, "最高价格", max_input)
+        max_p_input.bind(text=lambda inst, val: set_price_range_ui(
+            safe_float(min_p_input.text, 0), safe_float(val, 999999)
+        ))
+        self._add_row(inner, "最低金额(元)", min_p_input)
+        self._add_row(inner, "最高金额(元)", max_p_input)
+
+        # ---- 接驾距离 ----
+        min_pd_input = TextInput(
+            text=str(pdr[0]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        min_pd_input.bind(text=lambda inst, val: set_pickup_distance_ui(
+            safe_float(val, 0), safe_float(max_pd_input.text, 10)
+        ))
+        max_pd_input = TextInput(
+            text=str(pdr[1]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        max_pd_input.bind(text=lambda inst, val: set_pickup_distance_ui(
+            safe_float(min_pd_input.text, 0), safe_float(val, 10)
+        ))
+        self._add_row(inner, "接驾距离下限(km)", min_pd_input, "上限 10km")
+        self._add_row(inner, "接驾距离上限(km)", max_pd_input)
+
+        # ---- 订单里程 ----
+        min_od_input = TextInput(
+            text=str(odr[0]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        min_od_input.bind(text=lambda inst, val: set_order_distance_ui(
+            safe_float(val, 20), safe_float(max_od_input.text, 999999)
+        ))
+        max_od_input = TextInput(
+            text=str(odr[1]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        max_od_input.bind(text=lambda inst, val: set_order_distance_ui(
+            safe_float(min_od_input.text, 20), safe_float(val, 999999)
+        ))
+        self._add_row(inner, "订单里程下限(km)", min_od_input, "最低 20km")
+        self._add_row(inner, "订单里程上限(km)", max_od_input)
+
+        # ---- 单价过滤 ----
+        min_up_input = TextInput(
+            text=str(upr[0]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        min_up_input.bind(text=lambda inst, val: set_unit_price_ui(
+            safe_float(val, 0), safe_float(max_up_input.text, 8)
+        ))
+        max_up_input = TextInput(
+            text=str(upr[1]), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        max_up_input.bind(text=lambda inst, val: set_unit_price_ui(
+            safe_float(min_up_input.text, 0), safe_float(val, 8)
+        ))
+        self._add_row(inner, "单价下限(元/km)", min_up_input, "默认 1~8 元/公里")
+        self._add_row(inner, "单价上限(元/km)", max_up_input)
+
+        # ---- 订单类型多选 ----
+        type_title = Label(
+            text="订单类型（多选）",
+            font_size=dp_to_px(15),
+            color=hex_to_rgba(theme.text_primary()),
+            size_hint_y=None, height=dp_to_px(30),
+            halign="left",
+        )
+        inner.add_widget(type_title)
+
+        type_switches = {}
+        for ot in ORDER_TYPES:
+            key = ot["key"]
+            is_sel = key in selected_types
+            sw = Switch(active=is_sel)
+            type_switches[key] = sw
+
+            from modules.order_filter import set_order_types_ui
+            def make_toggle(k):
+                def _toggle(inst, val):
+                    current = set(get_order_filter().get_order_types())
+                    if val:
+                        current.add(k)
+                    else:
+                        current.discard(k)
+                    set_order_types_ui(list(current))
+                return _toggle
+            sw.bind(active=make_toggle(key))
+
+            self._add_row(inner, ot["name"], sw)
+
+        parent.add_widget(section)
+
+    def _build_section_region(self, parent):
+        """区域管理（省市选择 + 白名单/黑名单模式）"""
+        from kivy.uix.spinner import Spinner
+        from kivy.uix.switch import Switch
+        from kivy.uix.boxlayout import BoxLayout
+        from kivy.uix.label import Label
+        from modules.order_filter import (
+            get_provinces_ui, get_cities_ui,
+            get_current_location_ui, set_manual_location_ui,
+            set_region_mode_ui, get_region_manager,
+        )
+        section, inner = self._make_section("区域管理")
+
+        theme = get_theme_manager()
+        rm = get_region_manager()
+        cur_province, cur_city = get_current_location_ui()
+
+        # 白名单/黑名单模式
+        use_wl = rm._use_whitelist
+        mode_switch = Switch(active=use_wl)
+        mode_switch.bind(active=lambda inst, val: set_region_mode_ui(val))
+        self._add_row(inner, "白名单模式", mode_switch,
+                      "开=白名单(仅抢选中区域) / 关=黑名单(排除选中区域)")
+
+        # 当前定位
+        loc_label = Label(
+            text=f"当前定位: {cur_province} {cur_city}",
+            font_size=dp_to_px(13),
+            color=hex_to_rgba(theme.text_secondary()),
+            size_hint_y=None, height=dp_to_px(22),
+            halign="left",
+        )
+        inner.add_widget(loc_label)
+
+        # 省份选择
+        provinces = get_provinces_ui()
+        p_spinner = Spinner(
+            text=cur_province if cur_province in provinces else "请选择省份",
+            values=provinces,
+            size_hint_x=0.6, size_hint_y=None, height=dp_to_px(36),
+        )
+
+        # 城市选择
+        cities = get_cities_ui(cur_province) if cur_province else []
+        c_spinner = Spinner(
+            text=cur_city if cur_city in cities else "请选择城市",
+            values=cities,
+            size_hint_x=0.6, size_hint_y=None, height=dp_to_px(36),
+        )
+
+        def on_province_change(spinner, text):
+            new_cities = get_cities_ui(text)
+            c_spinner.values = new_cities
+            if new_cities:
+                c_spinner.text = new_cities[0]
+                set_manual_location_ui(text, new_cities[0])
+            else:
+                c_spinner.text = "请选择城市"
+                set_manual_location_ui(text, "")
+
+        def on_city_change(spinner, text):
+            set_manual_location_ui(p_spinner.text, text)
+
+        p_spinner.bind(text=on_province_change)
+        c_spinner.bind(text=on_city_change)
+
+        self._add_row(inner, "省份", p_spinner)
+        self._add_row(inner, "城市", c_spinner)
+
+        parent.add_widget(section)
+
+    def _build_section_refresh(self, parent):
+        """刷新策略（固定/随机间隔）"""
+        from kivy.uix.spinner import Spinner
+        from kivy.uix.textinput import TextInput
+        from modules.order_filter import (
+            get_order_filter, RefreshMode,
+            set_refresh_mode_ui, set_refresh_fixed_ui, set_refresh_random_ui,
+        )
+        section, inner = self._make_section("刷新策略")
+
+        filt = get_order_filter()
+        mode = filt.get_refresh_mode()
+        fixed_range = filt.get_refresh_fixed_range()
+        random_range = filt.get_refresh_random_range()
+
+        # 刷新模式
+        mode_spinner = Spinner(
+            text=mode,
+            values=(RefreshMode.FIXED, RefreshMode.RANDOM),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+        )
+        mode_spinner.bind(text=lambda inst, val: set_refresh_mode_ui(val))
+        self._add_row(inner, "刷新模式", mode_spinner,
+                      "固定=固定间隔下拉 / 随机=随机间隔下拉")
+
+        # 固定间隔参数
+        fixed_min = TextInput(
+            text=str(fixed_range[0]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        fixed_max = TextInput(
+            text=str(fixed_range[1]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        fixed_min.bind(text=lambda inst, val: set_refresh_fixed_ui(
+            safe_float(val, 1), safe_float(fixed_max.text, 10)
+        ))
+        fixed_max.bind(text=lambda inst, val: set_refresh_fixed_ui(
+            safe_float(fixed_min.text, 1), safe_float(val, 10)
+        ))
+        self._add_row(inner, "固定间隔下限(s)", fixed_min)
+        self._add_row(inner, "固定间隔上限(s)", fixed_max)
+
+        # 随机间隔参数
+        random_min = TextInput(
+            text=str(random_range[0]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        random_max = TextInput(
+            text=str(random_range[1]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="float",
+        )
+        random_min.bind(text=lambda inst, val: set_refresh_random_ui(
+            safe_float(val, 2), safe_float(random_max.text, 5)
+        ))
+        random_max.bind(text=lambda inst, val: set_refresh_random_ui(
+            safe_float(random_min.text, 2), safe_float(val, 5)
+        ))
+        self._add_row(inner, "随机间隔下限(s)", random_min)
+        self._add_row(inner, "随机间隔上限(s)", random_max)
+
+        parent.add_widget(section)
+
+    def _build_section_click(self, parent):
+        """点击延迟（固定/随机延迟）"""
+        from kivy.uix.spinner import Spinner
+        from kivy.uix.textinput import TextInput
+        from modules.order_filter import (
+            get_order_filter, ClickMode,
+            set_click_mode_ui, set_click_fixed_ui, set_click_random_ui,
+        )
+        section, inner = self._make_section("点击延迟")
+
+        filt = get_order_filter()
+        mode = filt.get_click_mode()
+        fixed_ms = filt.get_click_fixed_ms()
+        random_range = filt.get_click_random_range_ms()
+
+        # 点击模式
+        mode_spinner = Spinner(
+            text=mode,
+            values=(ClickMode.FIXED, ClickMode.RANDOM),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+        )
+        mode_spinner.bind(text=lambda inst, val: set_click_mode_ui(val))
+        self._add_row(inner, "点击模式", mode_spinner,
+                      "固定=固定延迟点击 / 随机=随机延迟点击")
+
+        # 固定延迟
+        fixed_input = TextInput(
+            text=str(fixed_ms), font_size=dp_to_px(15),
+            size_hint_x=0.5, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="int",
+        )
+        fixed_input.bind(text=lambda inst, val: set_click_fixed_ui(
+            safe_int(val, 1000)
+        ))
+        self._add_row(inner, "固定延迟(ms)", fixed_input, "500~5000ms")
+
+        # 随机延迟范围
+        rand_min = TextInput(
+            text=str(random_range[0]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="int",
+        )
+        rand_max = TextInput(
+            text=str(random_range[1]), font_size=dp_to_px(15),
+            size_hint_x=0.4, size_hint_y=None, height=dp_to_px(36),
+            multiline=False, input_filter="int",
+        )
+        rand_min.bind(text=lambda inst, val: set_click_random_ui(
+            safe_int(val, 500), safe_int(rand_max.text, 5000)
+        ))
+        rand_max.bind(text=lambda inst, val: set_click_random_ui(
+            safe_int(rand_min.text, 500), safe_int(val, 5000)
+        ))
+        self._add_row(inner, "随机延迟下限(ms)", rand_min)
+        self._add_row(inner, "随机延迟上限(ms)", rand_max)
+
         parent.add_widget(section)
 
     def _build_section_float(self, parent):

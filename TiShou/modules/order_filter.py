@@ -1223,6 +1223,11 @@ def toggle_order_type_ui(type_key: str) -> bool:
     return get_order_filter().toggle_order_type(type_key)
 
 
+def set_order_types_ui(types: List[str]):
+    """UI 层设置订单类型列表"""
+    get_order_filter().set_order_types(types)
+
+
 def set_refresh_mode_ui(mode: str):
     """UI 层设置刷新模式"""
     get_order_filter().set_refresh_mode(mode)
