@@ -302,11 +302,11 @@ def check_accessibility_config():
     elif 'android:description="' in content:
         error("description 使用硬编码字符串，AAPT2 会拒绝！必须用 @string/xxx")
 
-    # 3.3 FLAG_REQUEST_2_PASS_PAINT (Android 15+)
+    # 3.3 FLAG_REQUEST_2_PASS_PAINT (Android 15+，p4a 编译 SDK 暂不支持)
     if "flagRequest2PassPaint" in content:
-        ok("W5: flagRequest2PassPaint 已声明（Android 15+）")
+        ok("flagRequest2PassPaint 已声明")
     else:
-        warn("W5: 缺少 flagRequest2PassPaint（Android 15+ 建议）")
+        pass  # p4a compile SDK doesn't support this flag yet, skip warning
 
     # 3.4 canRetrieveWindowContent
     if 'android:canRetrieveWindowContent="true"' in content:
@@ -358,11 +358,11 @@ def check_java_sources():
         else:
             error("Java: 包名不正确，应为 org.tishou.accessibility")
 
-        # FLAG_REQUEST_2_PASS_PAINT
+        # FLAG_REQUEST_2_PASS_PAINT (p4a 编译 SDK 暂不支持)
         if "FLAG_REQUEST_2_PASS_PAINT" in content:
-            ok("Java: W5 flagRequest2PassPaint 已添加")
+            ok("Java: flagRequest2PassPaint 已添加（p4a SDK 暂不支持，运行时会忽略）")
         else:
-            warn("Java: W5 缺少 FLAG_REQUEST_2_PASS_PAINT")
+            pass  # p4a compile SDK doesn't support this yet
 
     # 4.2 KeepAliveService.java
     keepalive_path = "src/main/java/org/tishou/service/KeepAliveService.java"
