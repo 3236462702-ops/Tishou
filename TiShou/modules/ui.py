@@ -318,10 +318,11 @@ class TiShouUI:
                     后台冷启动线程：
                     1. 获取 biz_app 实例（优先使用传入的引用）
                     2. 注册进度回调到 TiShouApp（业务逻辑）
-                    3. 调用 biz_app.start()
+                    3. 调用 biz_app.start()（带 90 秒超时兜底）
                     4. 完成后切换到对应页面
                     5. 触发权限申请流程
                     """
+                    import threading as _threading
                     try:
                         # ---- 获取业务 App 单例 ----
                         biz_app = None
@@ -369,17 +370,48 @@ class TiShouUI:
 
                         biz_app.register_progress_callback("kivy_ui", _progress_cb)
 
-                        # ---- 执行冷启动 ----
+                        # ---- 执行冷启动（带 90 秒超时兜底） ----
                         self._log_info("后台冷启动开始...")
-                        ok = biz_app.start()
-                        self._log_info(f"后台冷启动完成, ok={ok}")
+                        _cold_result = {"ok": False, "done": False}
+                        _cold_lock = _threading.Lock()
+
+                        def _do_start():
+                            try:
+                                _cold_result["ok"] = biz_app.start()
+                            except Exception as _e:
+                                self._log_error(f"冷启动内部异常: {_e}")
+                                _cold_result["ok"] = False
+                            finally:
+                                with _cold_lock:
+                                    _cold_result["done"] = True
+
+                        _start_t = _threading.Thread(target=_do_start, daemon=True, name="cold-start-worker")
+                        _start_t.start()
+
+                        # 等待冷启动完成，最多 90 秒
+                        _deadline = time.time() + 90
+                        _timed_out = False
+                        while time.time() < _deadline:
+                            with _cold_lock:
+                                if _cold_result["done"]:
+                                    break
+                            _start_t.join(timeout=1.0)
+                        else:
+                            _timed_out = True
+                            self._log_error("冷启动超时（90s），强制跳转主页面")
+
+                        ok = _cold_result["ok"]
+                        self._log_info(f"后台冷启动完成, ok={ok}, 超时={_timed_out}")
 
                         # ---- 完成后切换页面 ----
                         def _after_cold_start(dt):
                             try:
                                 loading = self._get_loading_screen()
                                 if loading:
-                                    loading._update_progress(100, "准备就绪")
+                                    if _timed_out:
+                                        loading._update_progress(100, "启动超时，进入主页")
+                                    else:
+                                        loading._update_progress(100, "准备就绪")
                                     loading._cold_start_done = True
 
                                 # 判断跳转到免责页还是主设置页

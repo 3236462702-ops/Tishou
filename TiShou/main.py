@@ -538,7 +538,32 @@ class TiShouApp:
                 return True  # 跳过网络检测不阻断启动
 
             manager = network_mod.get_network_manager()
-            state = manager.check_network_state()
+
+            # 网络检测带超时兜底（最多 10 秒），防止 DNS 解析或连接挂起
+            import threading as _th
+            _net_result = {}
+            _net_done = _th.Event()
+
+            def _do_check():
+                try:
+                    _net_result["state"] = manager.check_network_state()
+                except Exception as _e:
+                    _net_result["error"] = str(_e)
+                finally:
+                    _net_done.set()
+
+            _t = _th.Thread(target=_do_check, daemon=True, name="net-check")
+            _t.start()
+            _timed_out = not _net_done.wait(timeout=10.0)
+
+            if _timed_out:
+                self._logger.warning("网络检测超时（10s），判定为无网络")
+                return False
+
+            state = _net_result.get("state")
+            if state is None:
+                self._logger.warning(f"网络检测异常: {_net_result.get('error', '未知')}，跳过")
+                return True
 
             if state == network_mod.NetworkState.NO_NETWORK:
                 self._logger.warning("无网络连接，部分功能受限（素材更新、时间同步）")

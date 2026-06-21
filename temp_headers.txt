@@ -1,0 +1,23 @@
+HTTP/1.1 302 Found
+Date: Sun, 21 Jun 2026 03:01:19 GMT
+Content-Type: text/html;charset=utf-8
+Content-Length: 0
+Location: https://productionresultssa18.blob.core.windows.net/actions-results/76ae9c1c-9130-4836-bdc0-a22d909e3ae2/workflow-job-run-39897a54-32bc-5c75-8bc9-13cc2cd3a991/logs/job/job-logs.txt?rsct=text%2Fplain&se=2026-06-21T03%3A11%3A19Z&sig=O0IhHbTli5ayOmw7vZv40biItiybtw8HOLnD5ddLlUE%3D&ske=2026-06-21T04%3A32%3A46Z&skoid=ca7593d4-ee42-46cd-af88-8b886a2f84eb&sks=b&skt=2026-06-21T00%3A32%3A46Z&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skv=2025-11-05&sp=r&spr=https&sr=b&st=2026-06-21T03%3A01%3A14Z&sv=2025-11-05
+x-github-api-version-selected: 2022-11-28
+Access-Control-Expose-Headers: ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO, X-GitHub-Request-Id, Deprecation, Sunset, Warning
+Access-Control-Allow-Origin: *
+Strict-Transport-Security: max-age=31536000; includeSubdomains; preload
+X-Frame-Options: deny
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 0
+Referrer-Policy: origin-when-cross-origin, strict-origin-when-cross-origin
+Content-Security-Policy: default-src 'none'
+Vary: Accept-Encoding, Accept, X-Requested-With
+Server: github.com
+X-RateLimit-Limit: 5000
+X-RateLimit-Remaining: 4996
+X-RateLimit-Reset: 1782012226
+X-RateLimit-Used: 4
+X-RateLimit-Resource: core
+X-GitHub-Request-Id: 6DB2:3E1149:755A9F:843E96:6A3753FF
+
