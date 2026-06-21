@@ -1,8 +1,9 @@
 # =============================================================================
 # TiShou — GitHub Actions 自动构建 APK
-# 版本：v2.3.3
-# 生成日期：2026-06-20
-# 更新内容：修复OCR重复加载导致68%卡死 + CJK字体Windows崩溃
+# 版本：v2.3.4
+# 生成日期：2026-06-21
+# 更新内容：accessibility_service_config.xml改用硬编码描述替代@string引用（p4a不支持values资源编译）
+#          buildozer.spec的android.add_resources仅保留res/xml:xml
 # =============================================================================
 # 触发条件：推送到 main 分支时自动构建
 # 构建环境：ubuntu-latest + Docker (kivy/buildozer)

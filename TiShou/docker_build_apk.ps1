@@ -1,8 +1,9 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.3.3
-# 生成日期：2026-06-20
-# 更新内容：修复OCR重复加载导致68%卡死 + CJK字体Windows崩溃
+# 版本：v2.3.4
+# 生成日期：2026-06-21
+# 更新内容：accessibility_service_config.xml改用硬编码描述替代@string引用（p4a不支持values资源编译）
+#          buildozer.spec的android.add_resources仅保留res/xml:xml
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -50,7 +51,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.3.3" -ForegroundColor Cyan
+Write-Host "  版本: v2.3.4" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
