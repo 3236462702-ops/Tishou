@@ -1,9 +1,8 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.3.4
+# 版本：v2.3.5
 # 生成日期：2026-06-21
-# 更新内容：accessibility_service_config.xml改用硬编码描述替代@string引用（p4a不支持values资源编译）
-#          buildozer.spec的android.add_resources仅保留res/xml:xml
+# 更新内容：无障碍服务description改用@string/app_name（p4a自动生成，硬编码不被AAPT2接受）
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -51,7 +50,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.3.4" -ForegroundColor Cyan
+Write-Host "  版本: v2.3.5" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

@@ -7,4 +7,4 @@
     android:notificationTimeout="100"
     android:canRetrieveWindowContent="true"
     android:canPerformGestures="true"
-    android:description="TiShou 无障碍服务 - 自动识别屏幕内容辅助抢单" />
+    android:description="@string/app_name" />
