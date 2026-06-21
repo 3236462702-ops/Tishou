@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">TiShou</string>
-    <string name="accessibility_service_description">TiShou 无障碍服务，用于自动识别屏幕内容辅助抢单</string>
-</resources>

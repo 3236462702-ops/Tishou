@@ -77,8 +77,12 @@
         {% endif %}
 
         <!-- TiShou 自定义服务（注入在 <application> 内部，AAPT 兼容） -->
+        <!-- C1 修复：无障碍服务与 KeepAliveService 必须与 PythonActivity 同进程
+             (android:process=":pythonservice")，否则 pyjnius 静态方法跨进程
+             访问时 sInstance 为 null，导致 isAvailable() 永远返回 false -->
         <service
             android:name="org.tishou.accessibility.TiShouAccessibilityService"
+            android:process=":pythonservice"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -90,6 +94,7 @@
         </service>
         <service
             android:name="org.tishou.service.KeepAliveService"
+            android:process=":pythonservice"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 

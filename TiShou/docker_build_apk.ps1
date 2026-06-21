@@ -1,8 +1,9 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.3.5
+# 版本：v2.4.0
 # 生成日期：2026-06-21
-# 更新内容：无障碍服务description改用@string/app_name（p4a自动生成，硬编码不被AAPT2接受）
+# 更新内容：C1进程隔离修复(无障碍服务加入pythonservice进程) + C2 API 33→35
+#          W5 2PassPaint标志 + C3前置校验脚本 + I4模型文件检查
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -50,7 +51,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.3.5" -ForegroundColor Cyan
+Write-Host "  版本: v2.4.0" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -114,16 +115,58 @@ if (Test-Path "$projectDir/.buildozer") {
 }
 
 # ─────────────────────────────────────────────────────────────
-# 5. 拉取最新的 buildozer Docker 镜像
+# 5. 检查 OCR 模型文件（I4 修复）
 # ─────────────────────────────────────────────────────────────
-Write-Host "[3/6] 拉取 buildozer Docker 镜像..." -ForegroundColor Yellow
+Write-Host "[2.5/6] 检查 OCR 模型文件..." -ForegroundColor Yellow
+$modelsOk = $true
+@("craft_mlt_25k.pth", "zh_sim_g2.pth", "english_g2.pth") | ForEach-Object {
+    $modelPath = Join-Path $projectDir "models/$_"
+    if (Test-Path $modelPath) {
+        $sizeMB = [math]::Round((Get-Item $modelPath).Length / 1MB, 1)
+        Write-Host "  ✓ $_ (${sizeMB}MB)" -ForegroundColor Green
+    } else {
+        Write-Host "  ✗ $_ 缺失！" -ForegroundColor Red
+        $modelsOk = $false
+    }
+}
+if (-not $modelsOk) {
+    Write-Host ""
+    Write-Host "  ⚠ OCR 模型文件缺失，请先运行 download_ocr_models.py" -ForegroundColor Yellow
+    Write-Host "    python download_ocr_models.py" -ForegroundColor Gray
+    Write-Host ""
+    $continue = Read-Host "  模型缺失，是否继续构建？(y/n)"
+    if ($continue -ne "y") {
+        exit 1
+    }
+}
+
+# ─────────────────────────────────────────────────────────────
+# 6. 运行前置校验脚本
+# ─────────────────────────────────────────────────────────────
+Write-Host "[3/7] 运行前置校验..." -ForegroundColor Yellow
+$preCheckResult = python pre_check.py 2>&1
+$preCheckExit = $LASTEXITCODE
+if ($preCheckExit -ne 0) {
+    Write-Host $preCheckResult
+    Write-Host ""
+    Write-Host "  ⚠ 前置校验发现严重错误，构建已终止" -ForegroundColor Red
+    Write-Host "    请修复上述错误后重新运行" -ForegroundColor Yellow
+    Read-Host "按 Enter 键退出"
+    exit 1
+}
+Write-Host "  ✓ 前置校验通过" -ForegroundColor Green
+
+# ─────────────────────────────────────────────────────────────
+# 7. 拉取最新的 buildozer Docker 镜像
+# ─────────────────────────────────────────────────────────────
+Write-Host "[4/7] 拉取 buildozer Docker 镜像..." -ForegroundColor Yellow
 docker pull kivy/buildozer:latest 2>&1 | Out-Null
 Write-Host "  ✓ 镜像已就绪" -ForegroundColor Green
 
 # ─────────────────────────────────────────────────────────────
 # 6. 执行构建
 # ─────────────────────────────────────────────────────────────
-Write-Host "[4/6] 开始构建 APK（首次构建约 30-60 分钟）..." -ForegroundColor Yellow
+Write-Host "[5/7] 开始构建 APK（首次构建约 30-60 分钟）..." -ForegroundColor Yellow
 Write-Host "      日志将实时输出到下方：" -ForegroundColor Gray
 Write-Host ""
 
@@ -186,6 +229,6 @@ if ($buildExitCode -eq 0) {
 }
 
 Write-Host ""
-Write-Host "[6/6] 完成" -ForegroundColor Yellow
+Write-Host "[7/7] 完成" -ForegroundColor Yellow
 Write-Host ""
 Read-Host "按 Enter 键退出"
