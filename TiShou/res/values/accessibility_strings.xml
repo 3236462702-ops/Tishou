@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 无障碍服务专用字符串资源（独立文件，避免与 buildozer 生成的 strings.xml 冲突） -->
+<resources>
+    <string name="accessibility_service_desc">TiShou 无障碍服务</string>
+</resources>

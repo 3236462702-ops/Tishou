@@ -106,8 +106,8 @@ android.use_androidx = True
 # (str) 自定义 Java 源码目录（无障碍服务 + 前台保活服务）
 android.add_src = src/main/java
 
-# (str) 自定义 Android 资源目录（无障碍服务 XML 配置）
-android.add_resources = res/xml:xml
+# (str) 自定义 Android 资源目录（无障碍服务 XML 配置 + 字符串资源）
+android.add_resources = res/xml:xml, res/values:values
 
 # ═══════════════════════════════════════════════════════════════
 # Android 权限清单
