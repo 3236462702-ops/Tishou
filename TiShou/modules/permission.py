@@ -536,6 +536,28 @@ class PermissionManager:
 
         self._logger.info("权限管理器初始化完成")
 
+    # ---------- 辅助：Toast 提示用户 ----------
+    def _show_toast(self, message: str):
+        """
+        在屏幕上显示 Toast 提示（Android）
+
+        :param message: 提示文字
+        """
+        try:
+            from jnius import autoclass
+            context = autoclass("org.kivy.android.PythonActivity").mActivity
+            if not context:
+                return
+            Toast = autoclass("android.widget.Toast")
+            Toast.makeText(
+                context.getApplicationContext(),
+                message,
+                Toast.LENGTH_LONG
+            ).show()
+            self._logger.info(f"[Toast] {message}")
+        except Exception as e:
+            self._logger.warning(f"显示 Toast 失败: {e}")
+
     # ============================================================
     # 系统识别
     # ============================================================
@@ -852,8 +874,7 @@ class PermissionManager:
     # 分步权限申请
     # ============================================================
 
-    def start_permission_flow(self, on_stage_change: Callable[[str, dict], None] = None,
-                              skip_settings: bool = False):
+    def start_permission_flow(self, on_stage_change: Callable[[str, dict], None] = None):
         """
         启动分步权限申请流程
 
@@ -861,16 +882,13 @@ class PermissionManager:
           - 不批量弹窗，每个阶段单独申请
           - 前一个阶段完成后自动进入下一个
           - 可注册回调监听阶段变更
+          - 每次跳转系统设置前会 Toast 提示具体权限名称
 
         :param on_stage_change: 回调函数(stage_enum_value, result_dict)
-        :param skip_settings: True=仅静默检测不跳转系统设置，False=完整流程
         """
         try:
             if on_stage_change:
                 self._stage_callbacks.append(on_stage_change)
-
-            # 设置是否跳过系统设置跳转（非首次启动时静默检测）
-            self._skip_settings = skip_settings
 
             # 先检测系统
             self.detect_system()
@@ -916,29 +934,20 @@ class PermissionManager:
                 }
 
                 if state != PermissionState.GRANTED:
-                    # 非首次启动：跳过系统设置跳转，仅静默记录
-                    if getattr(self, '_skip_settings', False):
-                        perm_result["request_result"] = False
-                        perm_result["skip_reason"] = "非首次启动，跳过系统设置跳转"
+                    # 申请权限（Toast 提示已在 _request_permission 中显示）
+                    perm_result["request_result"] = self._request_permission(perm_key)
+
+                    # 申请后重新检查
+                    new_state = self._check_single_permission(perm_key)
+                    perm_result["state"] = new_state.value
+
+                    if new_state != PermissionState.GRANTED:
                         stage_result["all_granted"] = False
-                        self._logger.warning(
-                            f"权限 '{perm_info['name']}' 未授予（静默跳过，不跳转设置）"
-                        )
-                    else:
-                        # 首次启动：申请权限（可能跳转系统设置）
-                        perm_result["request_result"] = self._request_permission(perm_key)
-
-                        # 申请后重新检查
-                        new_state = self._check_single_permission(perm_key)
-                        perm_result["state"] = new_state.value
-
-                        if new_state != PermissionState.GRANTED:
-                            stage_result["all_granted"] = False
-                            # 执行降级策略
-                            degradation = self._apply_degradation(perm_key)
-                            if degradation:
-                                perm_result["degradation"] = degradation
-                                stage_result["degradations"].append(degradation)
+                        # 执行降级策略
+                        degradation = self._apply_degradation(perm_key)
+                        if degradation:
+                            perm_result["degradation"] = degradation
+                            stage_result["degradations"].append(degradation)
 
                 stage_result["permissions"].append(perm_result)
 
@@ -1027,6 +1036,15 @@ class PermissionManager:
                     pass
 
             # ---- 普通权限：request_permissions() 弹窗 ----
+            # Toast 告知用户正在申请什么权限
+            perm_name_map = {
+                "location": "定位",
+                "notifications": "通知",
+                "network": "网络",
+                "background": "后台运行",
+            }
+            friendly_name = perm_name_map.get(perm_key, perm_key)
+            self._show_toast(f"请允许「{friendly_name}」权限，以正常使用应用功能")
             return self._request_normal_permission(android_perm, perm_key)
 
         except Exception as e:
@@ -1048,13 +1066,14 @@ class PermissionManager:
                 "android.settings.action.MANAGE_OVERLAY_PERMISSION",
                 Uri.parse("package:" + activity.getPackageName())
             )
+            self._show_toast("请开启「悬浮窗」权限，以便显示抢单状态窗口")
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
             self._logger.info("已跳转悬浮窗权限设置页")
             return True
         except Exception as e:
             self._logger.error(f"跳转悬浮窗设置页失败: {e}")
-            return self._open_app_settings_fallback()
+            return self._open_app_settings_fallback("悬浮窗")
 
     # ---------- 存储权限申请（Android 11+ 全部存储） ----------
     def _request_storage_permission(self) -> bool:
@@ -1079,6 +1098,7 @@ class PermissionManager:
                 return False
 
             pkg = activity.getPackageName()
+            self._show_toast("请开启「存储」权限，以便保存日志和配置")
             intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
             intent.setData(Uri.parse("package:" + pkg))
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -1087,7 +1107,7 @@ class PermissionManager:
             return True
         except Exception as e:
             self._logger.error(f"跳转全部存储权限设置页失败: {e}")
-            return self._open_app_settings_fallback()
+            return self._open_app_settings_fallback("存储")
 
     # ---------- 无障碍服务申请 ----------
     def _request_accessibility_service(self) -> bool:
@@ -1107,6 +1127,7 @@ class PermissionManager:
                 return False
 
             pkg = activity.getPackageName()
+            self._show_toast("请开启「无障碍服务」权限，以便自动识别和点击抢单按钮")
             intent = Intent(Settings.ACTION_ACCESSIBILITY_DETAILS_SETTINGS)
             intent.setData(Uri.parse("package:" + pkg))
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -1115,7 +1136,7 @@ class PermissionManager:
             return True
         except Exception as e:
             self._logger.error(f"跳转无障碍详情页失败: {e}")
-            return self._open_app_settings_fallback()
+            return self._open_app_settings_fallback("无障碍服务")
 
     # ---------- 屏幕录制权限申请 ----------
     def _request_screen_record(self) -> bool:
@@ -1154,6 +1175,7 @@ class PermissionManager:
             activity = PythonActivity.mActivity
             if not activity:
                 return False
+            self._show_toast("请选择「允许」以关闭电池优化，防止后台被系统杀掉")
             intent = Intent(
                 "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
                 Uri.parse("package:" + activity.getPackageName())
@@ -1164,7 +1186,7 @@ class PermissionManager:
             return True
         except Exception as e:
             self._logger.error(f"跳转省电白名单设置失败: {e}")
-            return self._open_app_settings_fallback()
+            return self._open_app_settings_fallback("省电白名单")
 
     # ---------- 普通权限申请 ----------
     def _request_normal_permission(self, android_perm: str, perm_key: str) -> bool:
@@ -1178,8 +1200,19 @@ class PermissionManager:
             return False
 
     # ---------- 兜底：跳转应用设置页 ----------
-    def _open_app_settings_fallback(self) -> bool:
+    def _open_app_settings_fallback(self, perm_name: str = "") -> bool:
+        """
+        跳转应用设置页（兜底）
+
+        :param perm_name: 权限中文名，用于 Toast 提示用户要找什么
+        """
         try:
+            # 先 Toast 告知用户缺什么权限
+            if perm_name:
+                self._show_toast(f"请在应用详情中开启「{perm_name}」权限")
+            else:
+                self._show_toast("请在应用详情中检查并开启所需权限")
+
             from jnius import autoclass
             PythonActivity = autoclass("org.kivy.android.PythonActivity")
             Intent = autoclass("android.content.Intent")
@@ -1191,7 +1224,7 @@ class PermissionManager:
             intent.setData(Uri.parse("package:" + activity.getPackageName()))
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             activity.startActivity(intent)
-            self._logger.info("已跳转应用设置页（兜底）")
+            self._logger.info(f"已跳转应用设置页（兜底，权限: {perm_name}）")
             return True
         except Exception:
             return False
@@ -1444,17 +1477,15 @@ def init_permissions() -> dict:
 
 def start_permission_flow(
     on_stage_callback: Callable[[str, dict], None] = None,
-    skip_settings: bool = False,
 ):
     """
     启动分步权限申请流程（供 UI 层调用）
 
     :param on_stage_callback: 阶段回调(stage, result)
-    :param skip_settings: True=仅静默检测不跳转系统设置
     """
     try:
         mgr = get_permission_manager()
-        mgr.start_permission_flow(on_stage_callback, skip_settings=skip_settings)
+        mgr.start_permission_flow(on_stage_callback)
     except Exception as e:
         LogManager.get_logger("app").error(f"启动权限流程异常: {e}")
 

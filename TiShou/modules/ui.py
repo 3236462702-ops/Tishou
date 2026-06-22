@@ -480,20 +480,13 @@ class TiShouUI:
                             pass
 
                 def _trigger_permission_flow(self):
-                    """触发分步权限申请流程（仅首次启动，后续只检查不跳转）"""
+                    """触发分步权限申请流程（每次启动都检查，Toast 提示缺什么权限）"""
                     try:
                         import threading
                         def _run_perm_flow():
                             try:
-                                from modules.permission import (
-                                    start_permission_flow, is_first_launch,
-                                    mark_permission_flow_completed,
-                                )
-                                first = is_first_launch()
-                                start_permission_flow(skip_settings=not first)
-                                # 首次启动完成后标记，后续启动不再跳转系统设置
-                                if first:
-                                    mark_permission_flow_completed()
+                                from modules.permission import start_permission_flow
+                                start_permission_flow()
                             except Exception as exc:
                                 self._log_error(f"权限申请流程异常: {exc}")
                         t = threading.Thread(target=_run_perm_flow, daemon=True)
