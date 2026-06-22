@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Buildozer 打包配置文件
-# 版本：v2.6.0
-# 更新日期：2026-06-22
-# 更新内容：C10 无障碍服务HyperOS修复(移除所有进程隔离+@android:string/ok兜底) + C8 权限提示Toast + C7 冷启动90%跳转修复
+# 版本：v2.6.1
+# 更新日期：2026-06-23
+# 更新内容：C11 修复p4a模板未被使用导致无障碍服务不注册(双重保险:绝对路径+构建前强制替换模板)
 # =============================================================================
 # 打包目标：Android APK（仅适配安卓真机）
 # 项目框架：Kivy 2.3.0+ / Python 3.11
@@ -56,7 +56,7 @@ source.exclude_dirs = __pycache__,.git,.idea,.trae,logs,venv,tests
 source.exclude_patterns = *.log,*.pyc,*.pyo
 
 # (str) 应用版本号
-version = 1.0.4
+version = 1.0.5
 
 # ═══════════════════════════════════════════════════════════════
 # 依赖清单（由 python-for-android 编译）
@@ -135,7 +135,9 @@ android.vibrate = True
 # android.bootstrap = sdl2
 
 # (str) 自定义 AndroidManifest 模板（将 service 声明注入 <application> 内部）
-android.manifest.template = AndroidManifest.tmpl.xml
+# C11: 使用绝对路径 /home/user/hostcwd 是 Docker 容器内的挂载点
+# 同时构建脚本会在构建前强制替换 p4a 默认模板，双重保险
+android.manifest.template = /home/user/hostcwd/AndroidManifest.tmpl.xml
 
 #
 # ─────────────────────────────────────────────────────────────

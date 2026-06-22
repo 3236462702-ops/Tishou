@@ -254,11 +254,13 @@ def check_manifest():
     # 2.7 C10 进程统一检查（HyperOS/Android 15/16 兼容）
     # C10 修复：移除所有 android:process=":pythonservice"，全部组件回归默认进程
     # 原因：小米澎湃 HyperOS 对非默认进程的无障碍服务有严格过滤，不显示在系统设置中
-    has_py_service = ':pythonservice' in content
+    # 先移除 XML 注释，避免注释中的 :pythonservice 被误判
+    content_no_comment = re.sub(r'<!--.*?-->', '', content, flags=re.DOTALL)
+    has_py_service = ':pythonservice' in content_no_comment
     if has_py_service:
         # 如果还有 :pythonservice 残留，检查无障碍服务是否也在同一进程
         warn("C10: 检测到 :pythonservice 残留，HyperOS 可能不显示无障碍服务")
-        a11y_section = content.split("TiShouAccessibilityService")[1].split("</service>")[0]
+        a11y_section = content_no_comment.split("TiShouAccessibilityService")[1].split("</service>")[0]
         if 'process=":pythonservice"' in a11y_section:
             warn("C10: 无障碍服务仍在 :pythonservice 进程，HyperOS 可能不显示")
         else:

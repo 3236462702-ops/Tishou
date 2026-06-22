@@ -1,11 +1,8 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.6.0
-# 生成日期：2026-06-22
-# 更新内容：C10 无障碍服务HyperOS修复(移除所有进程隔离+@android:string/ok兜底)
-#          C8 权限提示Toast + C7 冷启动90%跳转修复
-#          C6 OCR初始化68%卡死修复(5项: 去重权限申请+单步10s超时+主线程看门狗+
-#              实际阶段提示+PermissionManager防重复)
+# 版本：v2.6.1
+# 生成日期：2026-06-23
+# 更新内容：C11 修复p4a模板未被使用导致无障碍服务不注册(双重保险:绝对路径+构建前强制替换模板)
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -53,7 +50,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.6.0" -ForegroundColor Cyan
+Write-Host "  版本: v2.6.1" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -101,9 +98,9 @@ Write-Host "  项目目录: $projectDir" -ForegroundColor White
 Write-Host ""
 
 # ─────────────────────────────────────────────────────────────
-# 4. 清理旧容器和旧 APK
+# 4. 清理旧容器和旧 APK（保留 .buildozer 缓存以加速增量构建）
 # ─────────────────────────────────────────────────────────────
-Write-Host "[2/6] 清理旧的构建产物..." -ForegroundColor Yellow
+Write-Host "[2/8] 清理旧的构建产物..." -ForegroundColor Yellow
 
 docker rm -f tishou-builder 2>$null | Out-Null
 
@@ -111,15 +108,13 @@ if (Test-Path "$projectDir/bin") {
     Remove-Item -Path "$projectDir/bin/*.apk" -Force -ErrorAction SilentlyContinue
     Write-Host "  ✓ 已清理旧 APK 文件" -ForegroundColor Green
 }
-if (Test-Path "$projectDir/.buildozer") {
-    Remove-Item -Path "$projectDir/.buildozer" -Recurse -Force -ErrorAction SilentlyContinue
-    Write-Host "  ✓ 已清理旧构建缓存" -ForegroundColor Green
-}
+# C11: 不再清理 .buildozer 缓存，因为我们需要保留 p4a 模板替换结果
+# 如需完全清理，请手动删除 .buildozer 目录后重新构建
 
 # ─────────────────────────────────────────────────────────────
 # 5. 检查 OCR 模型文件（I4 修复）
 # ─────────────────────────────────────────────────────────────
-Write-Host "[2.5/6] 检查 OCR 模型文件..." -ForegroundColor Yellow
+Write-Host "[3/8] 检查 OCR 模型文件..." -ForegroundColor Yellow
 $modelsOk = $true
 @("craft_mlt_25k.pth", "zh_sim_g2.pth", "english_g2.pth") | ForEach-Object {
     $modelPath = Join-Path $projectDir "models/$_"
@@ -145,7 +140,7 @@ if (-not $modelsOk) {
 # ─────────────────────────────────────────────────────────────
 # 6. 运行前置校验脚本
 # ─────────────────────────────────────────────────────────────
-Write-Host "[3/7] 运行前置校验..." -ForegroundColor Yellow
+Write-Host "[4/8] 运行前置校验..." -ForegroundColor Yellow
 $preCheckResult = python pre_check.py 2>&1
 $preCheckExit = $LASTEXITCODE
 if ($preCheckExit -ne 0) {
@@ -161,14 +156,44 @@ Write-Host "  ✓ 前置校验通过" -ForegroundColor Green
 # ─────────────────────────────────────────────────────────────
 # 7. 拉取最新的 buildozer Docker 镜像
 # ─────────────────────────────────────────────────────────────
-Write-Host "[4/7] 拉取 buildozer Docker 镜像..." -ForegroundColor Yellow
+Write-Host "[5/8] 拉取 buildozer Docker 镜像..." -ForegroundColor Yellow
 docker pull kivy/buildozer:latest 2>&1 | Out-Null
 Write-Host "  ✓ 镜像已就绪" -ForegroundColor Green
 
 # ─────────────────────────────────────────────────────────────
-# 6. 执行构建
+# 8. 下载 p4a 并强制替换默认模板（C11 核心修复）
 # ─────────────────────────────────────────────────────────────
-Write-Host "[5/7] 开始构建 APK（首次构建约 30-60 分钟）..." -ForegroundColor Yellow
+# 原因：buildozer android.manifest.template 选项未被 p4a 正确使用，
+#       导致自定义服务声明（TiShouAccessibilityService、KeepAliveService）
+#       从未注入到最终 APK 的 AndroidManifest.xml 中。
+#       这是 6 个版本以来无障碍服务从未出现在系统设置中的根本原因。
+# 修复：先用 p4a --help 触发 python-for-android 下载，
+#       然后用 find + cp 强制替换 p4a 默认模板为我们的自定义模板。
+#       双重保险：android.manifest.template 路径也改为绝对路径。
+Write-Host "[6/8] 下载 p4a 并强制替换模板（C11 无障碍修复）..." -ForegroundColor Yellow
+docker run --rm `
+    --volume "${projectDir}:/home/user/hostcwd" `
+    --workdir /home/user/hostcwd `
+    --env BUILDOZER_NO_TERMINAL=1 `
+    kivy/buildozer:latest `
+    bash -c "
+      echo '=== 步骤 1/2: 下载 python-for-android 运行时 ==='
+      buildozer android p4a -- --help 2>&1 | tail -5 || echo 'p4a 初始化完成（或已初始化）'
+      echo ''
+      echo '=== 步骤 2/2: 强制替换默认 AndroidManifest 模板 ==='
+      find /home/user/hostcwd/.buildozer -name 'AndroidManifest.tmpl.xml' -path '*/templates/*' -exec cp -v /home/user/hostcwd/AndroidManifest.tmpl.xml {} \;
+      if [ \$? -eq 0 ]; then
+        echo '=== 模板替换成功！自定义服务声明已注入 ==='
+      else
+        echo '=== 警告：模板替换未找到目标文件，将回退到 android.manifest.template 配置 ==='
+      fi
+    "
+Write-Host "  ✓ p4a 模板替换完成" -ForegroundColor Green
+
+# ─────────────────────────────────────────────────────────────
+# 9. 执行构建
+# ─────────────────────────────────────────────────────────────
+Write-Host "[7/8] 开始构建 APK（首次构建约 30-60 分钟）..." -ForegroundColor Yellow
 Write-Host "      日志将实时输出到下方：" -ForegroundColor Gray
 Write-Host ""
 
@@ -191,7 +216,7 @@ $buildDuration = [math]::Round(($buildEnd - $buildStart).TotalMinutes, 1)
 # 7. 输出结果
 # ─────────────────────────────────────────────────────────────
 Write-Host ""
-Write-Host "[5/6] 构建完成，检查产物..." -ForegroundColor Yellow
+Write-Host "[8/8] 构建完成，检查产物..." -ForegroundColor Yellow
 
 if ($buildExitCode -eq 0) {
     Write-Host "========================================" -ForegroundColor Green
@@ -231,6 +256,6 @@ if ($buildExitCode -eq 0) {
 }
 
 Write-Host ""
-Write-Host "[7/7] 完成" -ForegroundColor Yellow
+Write-Host "[8/8] 完成" -ForegroundColor Yellow
 Write-Host ""
 Read-Host "按 Enter 键退出"

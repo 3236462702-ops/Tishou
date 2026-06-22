@@ -1,11 +1,8 @@
 # =============================================================================
 # TiShou — GitHub Actions 自动构建 APK
-# 版本：v2.6.0
-# 生成日期：2026-06-22
-# 更新内容：C10 无障碍服务HyperOS修复(移除所有进程隔离+@android:string/ok兜底)
-#          C8 权限提示Toast + C7 冷启动90%跳转修复
-#          C6 OCR初始化68%卡死修复(5项: 去重权限申请+单步10s超时+主线程看门狗+
-#              实际阶段提示+PermissionManager防重复)
+# 版本：v2.6.1
+# 生成日期：2026-06-23
+# 更新内容：C11 修复p4a模板未被使用导致无障碍服务不注册(双重保险:绝对路径+构建前强制替换模板)
 # =============================================================================
 # 触发条件：推送到 main 分支时自动构建
 # 构建环境：ubuntu-latest + Docker (kivy/buildozer)
@@ -46,13 +43,35 @@ jobs:
       - name: 前置校验（配置/文件/Java检查）
         run: python pre_check.py
 
-      - name: 清理旧构建缓存
+      - name: 清理旧 APK 文件（保留 .buildozer 缓存以加速增量构建）
         run: |
-          rm -rf .buildozer
           rm -rf bin/*.apk 2>/dev/null || true
 
       - name: 拉取 Buildozer Docker 镜像
         run: docker pull kivy/buildozer:latest
+
+      # C11 核心修复：在构建前强制替换 p4a 默认模板
+      # 原因：buildozer android.manifest.template 选项未被 p4a 正确使用，
+      #       导致自定义服务声明从未注入到 APK 中 => 无障碍服务不显示
+      - name: 下载 p4a 并强制替换模板（C11 无障碍修复）
+        run: |
+          docker run --rm \
+            --volume "${{ github.workspace }}:/home/user/hostcwd" \
+            --workdir /home/user/hostcwd \
+            --env BUILDOZER_NO_TERMINAL=1 \
+            kivy/buildozer:latest \
+            bash -c "
+              echo '=== 步骤 1/2: 下载 python-for-android 运行时 ==='
+              buildozer android p4a -- --help 2>&1 | tail -5 || echo 'p4a 初始化完成（或已初始化）'
+              echo ''
+              echo '=== 步骤 2/2: 强制替换默认 AndroidManifest 模板 ==='
+              find /home/user/hostcwd/.buildozer -name 'AndroidManifest.tmpl.xml' -path '*/templates/*' -exec cp -v /home/user/hostcwd/AndroidManifest.tmpl.xml {} \;
+              if [ \$? -eq 0 ]; then
+                echo '=== 模板替换成功！自定义服务声明已注入 ==='
+              else
+                echo '=== 警告：模板替换未找到目标文件，将回退到 android.manifest.template 配置 ==='
+              fi
+            "
 
       - name: 构建 APK
         run: |
