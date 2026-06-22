@@ -40,7 +40,6 @@
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|fontScale|uiMode|screenSize|smallestScreenSize|layoutDirection|density"
             android:exported="true"
             android:launchMode="singleTask"
-            android:process=":pythonservice"
             android:screenOrientation="{{ args.orientation }}"
             android:windowSoftInputMode="{{ args.window_soft_input_mode }}">
 
@@ -73,16 +72,16 @@
         {% endif %}
 
         {% if args.service %}
-        <service android:name="{{ args.service }}" android:process=":pythonservice" />
+        <service android:name="{{ args.service }}" />
         {% endif %}
 
         <!-- TiShou 自定义服务（注入在 <application> 内部，AAPT 兼容） -->
-        <!-- C1 修复：无障碍服务与 KeepAliveService 必须与 PythonActivity 同进程
-             (android:process=":pythonservice")，否则 pyjnius 静态方法跨进程
-             访问时 sInstance 为 null，导致 isAvailable() 永远返回 false -->
+        <!-- C10 修复：Android 15/16 小米澎湃 HyperOS 无障碍服务不显示问题
+             移除所有 android:process=":pythonservice"，全部组件回归默认进程。
+             原因：HyperOS 对非默认进程的无障碍服务有严格过滤，不显示在系统设置中。
+             由于所有组件都在同一进程，pyjnius 跨进程问题自然消失。 -->
         <service
             android:name="org.tishou.accessibility.TiShouAccessibilityService"
-            android:process=":pythonservice"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
@@ -94,7 +93,6 @@
         </service>
         <service
             android:name="org.tishou.service.KeepAliveService"
-            android:process=":pythonservice"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 

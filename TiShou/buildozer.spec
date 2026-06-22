@@ -1,8 +1,8 @@
 # =============================================================================
 # TiShou — Buildozer 打包配置文件
-# 版本：v2.4.0
-# 更新日期：2026-06-21
-# 更新内容：C1进程隔离修复(无障碍服务加入pythonservice进程) + C2 API 33→35 + W5 2PassPaint标志 + 前置校验脚本
+# 版本：v2.6.0
+# 更新日期：2026-06-22
+# 更新内容：C10 无障碍服务HyperOS修复(移除所有进程隔离+@android:string/ok兜底) + C8 权限提示Toast + C7 冷启动90%跳转修复
 # =============================================================================
 # 打包目标：Android APK（仅适配安卓真机）
 # 项目框架：Kivy 2.3.0+ / Python 3.11
@@ -106,8 +106,8 @@ android.use_androidx = True
 # (str) 自定义 Java 源码目录（无障碍服务 + 前台保活服务）
 android.add_src = src/main/java
 
-# (str) 自定义 Android 资源目录（无障碍服务 XML 配置 + 字符串资源）
-android.add_resources = res/xml:xml, res/values:values
+# (str) 自定义 Android 资源目录（无障碍服务 XML 配置）
+android.add_resources = res/xml:xml
 
 # ═══════════════════════════════════════════════════════════════
 # Android 权限清单

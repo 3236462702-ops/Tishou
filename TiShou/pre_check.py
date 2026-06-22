@@ -251,19 +251,21 @@ def check_manifest():
     else:
         warn("foregroundServiceType 未配置（Android 14+ 需要）")
 
-    # 2.7 C1 进程隔离检查（关键！）
+    # 2.7 C10 进程统一检查（HyperOS/Android 15/16 兼容）
+    # C10 修复：移除所有 android:process=":pythonservice"，全部组件回归默认进程
+    # 原因：小米澎湃 HyperOS 对非默认进程的无障碍服务有严格过滤，不显示在系统设置中
     has_py_service = ':pythonservice' in content
     if has_py_service:
-        # 检查无障碍服务是否也在 :pythonservice 中
-        # 找到 TiShouAccessibilityService 后的 process 属性
+        # 如果还有 :pythonservice 残留，检查无障碍服务是否也在同一进程
+        warn("C10: 检测到 :pythonservice 残留，HyperOS 可能不显示无障碍服务")
         a11y_section = content.split("TiShouAccessibilityService")[1].split("</service>")[0]
         if 'process=":pythonservice"' in a11y_section:
-            ok("C1: 无障碍服务与 PythonActivity 同进程 (:pythonservice)")
+            warn("C10: 无障碍服务仍在 :pythonservice 进程，HyperOS 可能不显示")
         else:
-            error("C1: 无障碍服务与 PythonActivity 不在同一进程！isAvailable() 永远返回 false")
+            ok("C10: 无障碍服务已在默认进程")
     else:
-        # 没有 :pythonservice 说明所有组件都在主进程，也是 OK 的
-        ok("C1: 所有组件在主进程（无进程隔离问题）")
+        # 没有 :pythonservice 说明所有组件在主进程，HyperOS 兼容
+        ok("C10: 所有组件在主进程（HyperOS 无障碍服务兼容）")
 
 
 # ============================================================
@@ -294,9 +296,11 @@ def check_accessibility_config():
         else:
             error(f"缺少必需属性: {attr}")
 
-    # 3.2 description 必须是 @string 引用
+    # 3.2 description 必须是 @string 或 @android:string 引用
     if '@string/app_name' in content:
         ok("description 使用 @string/app_name（p4a 自动生成）")
+    elif '@android:string/' in content:
+        ok("description 使用 @android:string/xxx（系统资源，HyperOS 兼容兜底）")
     elif '@string/' in content:
         warn("description 使用自定义 @string，确保 strings.xml 能正确打包")
     elif 'android:description="' in content:
