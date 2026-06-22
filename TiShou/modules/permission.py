@@ -852,7 +852,8 @@ class PermissionManager:
     # 分步权限申请
     # ============================================================
 
-    def start_permission_flow(self, on_stage_change: Callable[[str, dict], None] = None):
+    def start_permission_flow(self, on_stage_change: Callable[[str, dict], None] = None,
+                              skip_settings: bool = False):
         """
         启动分步权限申请流程
 
@@ -862,10 +863,14 @@ class PermissionManager:
           - 可注册回调监听阶段变更
 
         :param on_stage_change: 回调函数(stage_enum_value, result_dict)
+        :param skip_settings: True=仅静默检测不跳转系统设置，False=完整流程
         """
         try:
             if on_stage_change:
                 self._stage_callbacks.append(on_stage_change)
+
+            # 设置是否跳过系统设置跳转（非首次启动时静默检测）
+            self._skip_settings = skip_settings
 
             # 先检测系统
             self.detect_system()
@@ -911,20 +916,29 @@ class PermissionManager:
                 }
 
                 if state != PermissionState.GRANTED:
-                    # 申请权限
-                    perm_result["request_result"] = self._request_permission(perm_key)
-
-                    # 申请后重新检查
-                    new_state = self._check_single_permission(perm_key)
-                    perm_result["state"] = new_state.value
-
-                    if new_state != PermissionState.GRANTED:
+                    # 非首次启动：跳过系统设置跳转，仅静默记录
+                    if getattr(self, '_skip_settings', False):
+                        perm_result["request_result"] = False
+                        perm_result["skip_reason"] = "非首次启动，跳过系统设置跳转"
                         stage_result["all_granted"] = False
-                        # 执行降级策略
-                        degradation = self._apply_degradation(perm_key)
-                        if degradation:
-                            perm_result["degradation"] = degradation
-                            stage_result["degradations"].append(degradation)
+                        self._logger.warning(
+                            f"权限 '{perm_info['name']}' 未授予（静默跳过，不跳转设置）"
+                        )
+                    else:
+                        # 首次启动：申请权限（可能跳转系统设置）
+                        perm_result["request_result"] = self._request_permission(perm_key)
+
+                        # 申请后重新检查
+                        new_state = self._check_single_permission(perm_key)
+                        perm_result["state"] = new_state.value
+
+                        if new_state != PermissionState.GRANTED:
+                            stage_result["all_granted"] = False
+                            # 执行降级策略
+                            degradation = self._apply_degradation(perm_key)
+                            if degradation:
+                                perm_result["degradation"] = degradation
+                                stage_result["degradations"].append(degradation)
 
                 stage_result["permissions"].append(perm_result)
 
@@ -1429,18 +1443,54 @@ def init_permissions() -> dict:
 
 
 def start_permission_flow(
-    on_stage_callback: Callable[[str, dict], None] = None
+    on_stage_callback: Callable[[str, dict], None] = None,
+    skip_settings: bool = False,
 ):
     """
     启动分步权限申请流程（供 UI 层调用）
 
     :param on_stage_callback: 阶段回调(stage, result)
+    :param skip_settings: True=仅静默检测不跳转系统设置
     """
     try:
         mgr = get_permission_manager()
-        mgr.start_permission_flow(on_stage_callback)
+        mgr.start_permission_flow(on_stage_callback, skip_settings=skip_settings)
     except Exception as e:
         LogManager.get_logger("app").error(f"启动权限流程异常: {e}")
+
+
+def is_first_launch() -> bool:
+    """
+    判断是否为首次启动（权限流程是否已完成）
+
+    首次启动：需要完整权限申请流程（含跳转系统设置）
+    非首次启动：仅静默检测，不跳转设置页
+
+    :return: True=首次启动, False=已完成过权限流程
+    """
+    try:
+        from modules.utils import ConfigManager
+        config = ConfigManager()
+        return not config.get("permission_flow_completed", False)
+    except Exception:
+        return True  # 配置读取失败，视为首次启动
+
+
+def mark_permission_flow_completed() -> bool:
+    """
+    标记权限申请流程已完成（后续启动不再跳转系统设置）
+
+    :return: True=标记成功
+    """
+    try:
+        from modules.utils import ConfigManager
+        config = ConfigManager()
+        config.set("permission_flow_completed", True)  # set() 内部已调用 _save()
+        LogManager.get_logger("app").info("权限申请流程已完成标记，后续启动不再跳转系统设置")
+        return True
+    except Exception as e:
+        LogManager.get_logger("app").error(f"标记权限流程完成失败: {e}")
+        return False
 
 
 def get_permission_status_ui() -> dict:

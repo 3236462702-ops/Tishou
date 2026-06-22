@@ -862,20 +862,40 @@ class TiShouApp:
     # 第8步：后台服务
     # ========================================================
     def _start_background_services(self):
-        """启动所有后台服务"""
+        """启动所有后台服务（每步 8 秒超时保护）"""
         self._logger.info("正在启动后台服务...")
 
-        # ---- 1. 后台保活 ----
-        self._start_keep_alive()
+        import threading
+        service_steps = [
+            ("_start_keep_alive", "后台保活"),
+            ("_init_sound", "音效管理"),
+            ("_init_notifications", "通知管理"),
+            ("_init_float_window", "悬浮窗"),
+        ]
 
-        # ---- 2. 音效管理 ----
-        self._init_sound()
+        for method_name, display_name in service_steps:
+            done = threading.Event()
+            exc_info = []
 
-        # ---- 3. 通知管理 ----
-        self._init_notifications()
+            def _worker(m=method_name):
+                try:
+                    getattr(self, m)()
+                except Exception as e:
+                    exc_info.append(e)
+                finally:
+                    done.set()
 
-        # ---- 4. 悬浮窗 ----
-        self._init_float_window()
+            t = threading.Thread(target=_worker, daemon=True, name=f"svc-{display_name}")
+            t.start()
+            t.join(timeout=8.0)
+
+            if done.is_set():
+                if exc_info:
+                    self._logger.warning(f"{display_name}启动异常（不阻断）: {exc_info[0]}")
+                else:
+                    self._logger.info(f"{display_name}已启动")
+            else:
+                self._logger.warning(f"{display_name}启动超时（8s），跳过（不影响主流程）")
 
         self._logger.info("后台服务启动完成")
 
