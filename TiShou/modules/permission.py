@@ -509,6 +509,8 @@ class PermissionManager:
 
         # 权限状态缓存
         self._permission_cache = {}
+        # 已申请过的权限集合（防止重复跳转系统设置页）
+        self._requested = set()
 
         # 当前申请阶段
         self._current_stage = PermissionStage.STAGE_1_BASIC
@@ -959,6 +961,13 @@ class PermissionManager:
           特殊权限（省电白名单）         → ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
         """
         try:
+            # 特殊权限防重复申请：已申请过则不再跳转系统设置页
+            if perm_key in SPECIAL_PERMISSIONS and perm_key in self._requested:
+                self._logger.debug(f"权限 '{perm_key}' 已申请过，跳过重复跳转")
+                return True
+
+            self._requested.add(perm_key)
+
             if not is_android():
                 self._logger.debug(f"[模拟] 申请权限: {perm_key} → 已同意")
                 self._permission_cache[perm_key] = PermissionState.GRANTED

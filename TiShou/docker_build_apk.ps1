@@ -1,9 +1,11 @@
 # =============================================================================
 # TiShou — Docker 本地 APK 构建脚本
-# 版本：v2.4.0
-# 生成日期：2026-06-21
+# 版本：v2.5.0
+# 生成日期：2026-06-22
 # 更新内容：C1进程隔离修复(无障碍服务加入pythonservice进程) + C2 API 33→35
-#          W5 2PassPaint标志 + C3前置校验脚本 + I4模型文件检查
+#          W5 2PassPaint标志(已移除兼容) + C3前置校验脚本 + I4模型文件检查
+#          C6 OCR初始化68%卡死修复(5项: 去重权限申请+单步10s超时+主线程看门狗+
+#              实际阶段提示+PermissionManager防重复)
 # =============================================================================
 # 用途：在 Windows 开发机上通过 Docker 容器构建 Android APK
 # 前提：已安装 Docker Desktop for Windows
@@ -51,7 +53,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  TiShou APK 构建脚本 (Docker)" -ForegroundColor Cyan
-Write-Host "  版本: v2.4.0" -ForegroundColor Cyan
+Write-Host "  版本: v2.5.0" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

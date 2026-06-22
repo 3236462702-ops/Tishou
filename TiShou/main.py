@@ -725,7 +725,7 @@ class TiShouApp:
         return all_ok
 
     def _init_core_modules(self):
-        """依次初始化核心模块（带进度上报 + 权限主动申请）"""
+        """依次初始化核心模块（带进度上报，权限已在 _load_modules 中申请）"""
         init_steps = [
             ("statistics", "统计模块", "init_statistics"),
             ("capture", "采集引擎", "init_capture"),
@@ -741,20 +741,39 @@ class TiShouApp:
                     self._logger.warning(f"{display_name}未加载，跳过初始化")
                     continue
 
-                # ---- 模块初始化前：检查并申请该模块所需权限 ----
-                self._ensure_module_permissions(mod_key)
-
                 # 逐模块上报进度：resource_load 阶段后段 68%~72%
                 sub_progress = 68 + int((idx / len(init_steps)) * 4)
                 self._on_stage_start(f"初始化: {display_name}", progress=float(sub_progress))
 
-                if mod_key == "material_update":
-                    auto_update = self._config.get("material_auto_update", True)
-                    getattr(mod, init_func)(start_auto=auto_update)
-                else:
-                    getattr(mod, init_func)()
+                # 带超时保护（单步最多 10 秒），避免 jnius/autoclass 等 JNI 调用卡死
+                import threading
+                init_exc = []
+                init_done = threading.Event()
 
-                self._logger.info(f"{display_name}已初始化")
+                def _init_worker():
+                    try:
+                        if mod_key == "material_update":
+                            auto_update = self._config.get("material_auto_update", True)
+                            getattr(mod, init_func)(start_auto=auto_update)
+                        else:
+                            getattr(mod, init_func)()
+                    except Exception as e:
+                        init_exc.append(e)
+                    finally:
+                        init_done.set()
+
+                t = threading.Thread(target=_init_worker, daemon=True, name=f"init-{mod_key}")
+                t.start()
+                t.join(timeout=10.0)
+
+                if init_done.is_set():
+                    if init_exc:
+                        self._logger.error(f"{display_name}初始化异常: {init_exc[0]}")
+                    else:
+                        self._logger.info(f"{display_name}已初始化")
+                else:
+                    self._logger.warning(f"{display_name}初始化超时（10s），跳过（不影响后续模块）")
+
             except Exception as e:
                 self._logger.error(f"{display_name}初始化异常: {e}")
 

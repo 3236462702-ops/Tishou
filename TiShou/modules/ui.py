@@ -408,6 +408,7 @@ class TiShouUI:
                             try:
                                 loading = self._get_loading_screen()
                                 if loading:
+                                    loading._stop_watchdog()  # 冷启动完成，停掉看门狗
                                     if _timed_out:
                                         loading._update_progress(100, "启动超时，进入主页")
                                     else:
@@ -458,6 +459,7 @@ class TiShouUI:
                             try:
                                 loading = self._get_loading_screen()
                                 if loading:
+                                    loading._stop_watchdog()  # 异常兜底也停掉看门狗
                                     loading._update_progress(0, f"启动异常: {exc}")
                                     loading._cold_start_done = True
                                 # 尝试跳转到设置页
@@ -1176,6 +1178,10 @@ class LoadingScreen(Screen):
         self._dot_anim_event = None  # 状态文字跳动事件
         self._pulse_anim_event = None  # 百分比脉冲事件
         self._status_base_text = "请稍候"  # 状态文字基础文本
+        self._last_stage_name = ""  # 最近一次冷启动阶段名称（用于超时提示）
+        self._watchdog_event = None  # Kivy Clock 看门狗事件
+        self._watchdog_last_progress = 0.0  # 看门狗上次检查的进度值
+        self._watchdog_stuck_count = 0  # 看门狗连续卡住次数
         self._build_ui()
 
     def _build_ui(self):
@@ -1290,7 +1296,7 @@ class LoadingScreen(Screen):
         self.start_loading()
 
     def start_loading(self):
-        """开始加载（含动画圈 + 占位动画 + 冷启动超时兜底）"""
+        """开始加载（含动画圈 + 占位动画 + 冷启动超时兜底 + 主线程看门狗）"""
         if self._loading:
             return
         self._loading = True
@@ -1310,6 +1316,9 @@ class LoadingScreen(Screen):
 
         # 启动超时兜底线程
         threading.Thread(target=self._timeout_fallback, daemon=True).start()
+
+        # 启动主线程看门狗（每 5 秒检查一次进度，卡住 4 次即 20 秒后强制恢复）
+        self._start_watchdog()
 
     def _start_dot_animation(self):
         """状态文字跳动省略号动画（".", "..", "..."）"""
@@ -1380,18 +1389,20 @@ class LoadingScreen(Screen):
         """
         冷启动超时兜底：
         如果 COLD_START_TIMEOUT 秒后冷启动仍未完成，
-        显示提示但仍保持加载状态（不卡死，OCR 模型首次加载较慢）
+        显示当前实际阶段提示（而非固定「OCR 模型初始化中」误导用户）
         """
         import time
         time.sleep(self.COLD_START_TIMEOUT)
         try:
             if not self._cold_start_done and not self._fallback_triggered:
                 self._fallback_triggered = True
-                self._update_progress(
-                    self._progress_bar.value if self._progress_bar else 70,
-                    "首次加载较慢，请耐心等待（OCR 模型初始化中）…"
-                )
-                self._log_error("冷启动超时，仍在等待（可能 OCR 模型加载中）")
+                current_progress = self._progress_bar.value if self._progress_bar else 70
+                if self._last_stage_name:
+                    hint = f"首次加载较慢，请耐心等待（当前: {self._last_stage_name}）…"
+                else:
+                    hint = "首次加载较慢，请耐心等待…"
+                self._update_progress(current_progress, hint)
+                self._log_error(f"冷启动超时，仍在等待（进度: {current_progress:.0f}%，阶段: {self._last_stage_name or '未知'}）")
         except Exception:
             pass
 
@@ -1409,6 +1420,7 @@ class LoadingScreen(Screen):
             if self._status_label and text:
                 self._status_base_text = text
                 self._status_label.text = text
+                self._last_stage_name = text  # 同步记录阶段名称
         except Exception:
             pass
 
@@ -1423,11 +1435,83 @@ class LoadingScreen(Screen):
                 # 更新基础文本（跳动动画会在后面加省略号）
                 self._status_base_text = text
                 self._status_label.text = text
+                self._last_stage_name = text  # 记录阶段名称，用于超时提示
             # 真实冷启动进度到达（>30%）→ 停掉占位动画
             if value > 30:
                 self._real_progress_received = True
+            # 看门狗：进度有变化则重置卡住计数
+            if value > self._watchdog_last_progress:
+                self._watchdog_last_progress = value
+                self._watchdog_stuck_count = 0
         except Exception:
             pass
+
+    def _start_watchdog(self):
+        """
+        主线程看门狗（Kivy Clock 驱动）
+        每 5 秒检查一次进度，若连续 4 次（20 秒）进度无变化 → 强制跳转
+        与 _timeout_fallback 线程互补：看门狗运行在主线程，不受后台线程阻塞影响
+        """
+        try:
+            from kivy.clock import Clock
+
+            def _watchdog_check(dt):
+                if self._cold_start_done:
+                    self._stop_watchdog()
+                    return
+
+                current = self._progress_bar.value if self._progress_bar else 0
+                if current <= self._watchdog_last_progress and current < 95:
+                    self._watchdog_stuck_count += 1
+                    if self._watchdog_stuck_count >= 4:
+                        self._log_error(
+                            f"看门狗：进度卡在 {current:.0f}% 超过 20 秒，"
+                            f"阶段: {self._last_stage_name or '未知'}，强制跳转"
+                        )
+                        self._stop_watchdog()
+                        self._force_recovery(current)
+                        return
+                else:
+                    self._watchdog_last_progress = current
+                    self._watchdog_stuck_count = 0
+
+            self._watchdog_event = Clock.schedule_interval(_watchdog_check, 5.0)
+        except Exception:
+            pass
+
+    def _stop_watchdog(self):
+        """停止看门狗"""
+        try:
+            if self._watchdog_event:
+                from kivy.clock import Clock
+                Clock.unschedule(self._watchdog_event)
+                self._watchdog_event = None
+        except Exception:
+            pass
+
+    def _force_recovery(self, current_progress):
+        """
+        强制恢复：标记冷启动完成，跳转到主页面
+        作为最后兜底，确保用户不会永远卡在加载页
+        """
+        try:
+            self._cold_start_done = True
+            self._update_progress(100, "启动超时，已进入主页（部分功能可能受限）")
+
+            from kivy.clock import Clock
+            Clock.schedule_once(lambda dt: self._jump_to_main(), 0.5)
+        except Exception as e:
+            self._log_error(f"强制恢复异常: {e}")
+
+    def _jump_to_main(self):
+        """跳转到主页面（由看门狗或超时兜底触发）"""
+        try:
+            from kivy.app import App
+            app = App.get_running_app()
+            if app and hasattr(app, 'root') and hasattr(app.root, 'current'):
+                app.root.current = "main"
+        except Exception as e:
+            self._log_error(f"跳转主页面异常: {e}")
 
     def _log_error(self, msg):
         try:

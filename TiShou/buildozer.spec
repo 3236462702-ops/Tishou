@@ -56,7 +56,7 @@ source.exclude_dirs = __pycache__,.git,.idea,.trae,logs,venv,tests
 source.exclude_patterns = *.log,*.pyc,*.pyo
 
 # (str) 应用版本号
-version = 1.0.3
+version = 1.0.4
 
 # ═══════════════════════════════════════════════════════════════
 # 依赖清单（由 python-for-android 编译）
